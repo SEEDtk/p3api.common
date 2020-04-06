@@ -57,6 +57,7 @@ public class SubFamilyProcessor extends BaseProcessor {
     @Option(name = "-i", aliases = { "--input" }, metaVar = "inFile", usage = "name of input file (default is to use STDIN)")
     private File inFile;
 
+    /** subsystem ID column */
     @Option(name = "-c", aliases = { "--col" }, metaVar = "subsystem_id", usage = "index (1-based) or name of column with subsystem IDs")
     private String keyCol;
 
