@@ -22,9 +22,6 @@ public class App
         case "subfams" :
             processor = new SubFamilyProcessor();
             break;
-        case "gtos" :
-            processor = new GtoProcessor();
-            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }

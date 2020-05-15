@@ -87,7 +87,7 @@ public class SubFamilyProcessor extends BaseProcessor {
     }
 
     @Override
-    public void run() {
+    public void runCommand() {
         // Connect to PATRIC.
         this.p3 = new Connection();
         // Create the master family set.
