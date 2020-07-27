@@ -23,6 +23,9 @@ public class App
         case "subfams" :
             processor = new SubFamilyProcessor();
             break;
+        case "famCounts" :
+            processor = new FamilyCountProcessor();
+            break;
         case "roleCounts" :
             processor = new RoleCountProcessor();
             break;
