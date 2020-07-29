@@ -20,6 +20,9 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
+        case "subcheck" :
+            processor = new SubsystemCheckProcessor();
+            break;
         case "subfams" :
             processor = new SubFamilyProcessor();
             break;
