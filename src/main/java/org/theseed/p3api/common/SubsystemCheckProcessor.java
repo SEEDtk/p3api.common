@@ -16,13 +16,17 @@ import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.p3api.Connection;
 import org.theseed.p3api.Connection.Table;
+import org.theseed.proteins.Role;
+import org.theseed.subsystems.SubsystemProjector;
+import org.theseed.subsystems.SubsystemSpec;
 import org.theseed.utils.BaseProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
 /**
  * This command compares the subsystems in a GTO to the corresponding subsystems in PATRIC.  The positional
- * parameter is the name of a genome directory.  All of the genomes in the directory will be checked.
+ * parameters are the name of a genome directory and the name of the current subsystem projector.  All of the
+ * genomes in the directory will be checked.
  *
  * The command-line options are
  *
@@ -35,8 +39,12 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 public class SubsystemCheckProcessor extends BaseProcessor {
 
     // COMMAND-LINE OPTIONS
+
     @Argument(index = 0, metaVar = "gtoDir", usage = "genome input directory", required = true)
     private File inDir;
+
+    @Argument(index = 1, metaVar = "projector.txt", usage = "subsystem projector file", required = true)
+    private File projectorFile;
 
     @Override
     protected void setDefaults() {
@@ -46,6 +54,8 @@ public class SubsystemCheckProcessor extends BaseProcessor {
     protected boolean validateParms() throws IOException {
         if (! this.inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
+        if (! this.projectorFile.canRead())
+            throw new FileNotFoundException("Projector file " + this.projectorFile + " is not found or invalid.");
         return true;
     }
 
@@ -53,13 +63,17 @@ public class SubsystemCheckProcessor extends BaseProcessor {
     protected void runCommand() throws Exception {
         int total = 0;
         int missCount = 0;
+        int noSuchSubsystem = 0;
+        int deletedRole = 0;
         // Get the genome directory.
         GenomeDirectory genomes = new GenomeDirectory(this.inDir);
         log.info("{} genomes in input directory.", genomes.size());
         // Connect to PATRIC.
         Connection p3 = new Connection();
+        // Load the subsystem projector.
+        SubsystemProjector projector = SubsystemProjector.Load(this.projectorFile);
         // Write the report header.
-        System.out.println("genome\tfeature_id\trole\tpgfam\tmissing_subsystem");
+        System.out.println("genome\tfeature_id\trole\tmissing_subsystem\treason");
         // Loop through the genomes.
         for (Genome genome : genomes) {
             log.info("Processing {}.", genome);
@@ -74,14 +88,26 @@ public class SubsystemCheckProcessor extends BaseProcessor {
                     Set<String> featSubs = feat.getSubsystems();
                     if (! featSubs.contains(subName)) {
                         missCount++;
-                        String pgFam = feat.getPgfam();
-                        if (pgFam == null) pgFam = "";
-                        System.out.format("%s\t%s\t%s\t%s\t%s%n", genome.getId(), fid, feat.getFunction(), pgFam, subName);
+                        String reason = "obsolete variant configuration";
+                        SubsystemSpec subsystem = projector.getSubsystem(subName);
+                        if (subsystem == null) {
+                            reason = "obsolete subsystem";
+                            noSuchSubsystem++;
+                        } else {
+                            List<Role> roles = feat.getUsefulRoles(projector.usefulRoles());
+                            boolean roleFound = roles.stream().anyMatch(r -> subsystem.contains(r));
+                            if (! roleFound) {
+                                reason = "role no longer in subsystem";
+                                deletedRole++;
+                            }
+                        }
+                        System.out.format("%s\t%s\t%s\t%s\t%s%n", genome.getId(), fid, feat.getFunction(), subName, reason);
                     }
                 }
             }
         }
-        log.info("All done.  {} features checked, {} misses.", total, missCount);
+        log.info("All done.  {} features checked, {} misses:  {} obsolete subsystems, {} obsolete roles.", total, missCount,
+                noSuchSubsystem, deletedRole);
     }
 
 }
