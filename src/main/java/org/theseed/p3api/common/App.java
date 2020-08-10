@@ -32,6 +32,9 @@ public class App
         case "roleCounts" :
             processor = new RoleCountProcessor();
             break;
+        case "famPage" :
+            processor = new FamPageProcessor();
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }
