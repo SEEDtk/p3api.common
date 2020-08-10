@@ -35,6 +35,9 @@ public class App
         case "famPage" :
             processor = new FamPageProcessor();
             break;
+        case "simple" :
+            processor = new SimpleProcessor();
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }
