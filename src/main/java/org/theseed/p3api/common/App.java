@@ -7,8 +7,12 @@ import org.theseed.utils.BaseProcessor;
 /**
  * This application performs various useful PATRIC API tasks.
  *
- * subfams	count the protein families for each role in a subsystem
- * roles	count the number of times each role occurs singly in a prokaryote
+ * subfams		count the protein families for each role in a subsystem
+ * roles		count the number of times each role occurs singly in a prokaryote
+ * subcheck		validate the subsystems in a GTO against the subsystems in PATRIC
+ * famCounts	count the protein families in genomes in a directory
+ * roleCounts	count potentially-universal roles in a set of PATRIC genomes
+ * simple		echo parameters (for testing)
  *
  */
 public class App
@@ -31,9 +35,6 @@ public class App
             break;
         case "roleCounts" :
             processor = new RoleCountProcessor();
-            break;
-        case "famPage" :
-            processor = new FamPageProcessor();
             break;
         case "simple" :
             processor = new SimpleProcessor();
