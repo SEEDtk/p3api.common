@@ -22,7 +22,7 @@ import org.theseed.utils.ParseFailureException;
  * contain full genomes and the job is not restartable, so this is a bad idea for a large genome set.
  *
  * The positional parameters are the name of the input genome source and the name of the output directory.
- * The output directory should not exist unless "--clear" or "--update" is specified.
+ * If the output directory already exists, it will be updated.
  *
  * The command-line options are as follows.
  *
@@ -31,6 +31,7 @@ import org.theseed.utils.ParseFailureException;
  *
  * --clear		erase the output directory before starting
  * --source		type of input (master directory, GTO directory, PATRIC ID file); default is GTO directory
+ * --missing	only copy a genome if it is not already in the
  *
  * @author Bruce Parrello
  *
@@ -49,9 +50,9 @@ public class CopyMasterProcessor extends BaseProcessor {
     @Option(name = "--clear", usage = "if specified, the output directory will be erased before starting")
     private boolean clearFlag;
 
-    /** TRUE if the output directory is being updates*/
-    @Option(name = "--update", usage = "if specified, input genomes will add to or overwrite existing genomes")
-    private boolean updateFlag;
+    /** TRUE to only copy new genomes */
+    @Option(name = "--missing", usage = "if specified, input genomes not overwrite existing genomes")
+    private boolean missingFlag;
 
     /** type of input */
     @Option(name = "--source", usage = "type of genome input (master directory, normal, PATRIC ID file)")
@@ -69,20 +70,18 @@ public class CopyMasterProcessor extends BaseProcessor {
     protected void setDefaults() {
         this.inType = GenomeSource.Type.DIR;
         this.clearFlag = false;
-        this.updateFlag = false;
+        this.missingFlag = false;
     }
 
     @Override
     protected boolean validateParms() throws IOException, ParseFailureException {
-        if (this.updateFlag && this.clearFlag)
-            throw new ParseFailureException("Cannot specify both --clear and --update.");
         // Create the source stream.
         this.genomes = this.inType.create(this.inDir);
         // Create the output directory.
-        if (this.updateFlag)
-            this.master = new GenomeMultiDirectory(this.outDir);
+        if (this.clearFlag)
+            this.master = GenomeMultiDirectory.create(this.outDir, true);
         else
-            this.master = GenomeMultiDirectory.create(this.outDir, this.clearFlag);
+            this.master = new GenomeMultiDirectory(this.outDir);
         return true;
     }
 
@@ -92,12 +91,11 @@ public class CopyMasterProcessor extends BaseProcessor {
         long total = this.genomes.size();
         long start = System.currentTimeMillis();
         for (Genome genome : this.genomes) {
-            this.master.add(genome);
+            if (! this.missingFlag || ! this.master.contains(genome.getId()))
+                this.master.add(genome);
             count++;
-            if (count % 100 == 0) {
-                Duration speed = Duration.ofMillis(System.currentTimeMillis() - start).dividedBy(count);
-                log.info("{} of {} processed; {} per genome.", count, total, speed.toString());
-            }
+            Duration speed = Duration.ofMillis(System.currentTimeMillis() - start).dividedBy(count);
+            log.info("{} of {} processed; {} per genome.", count, total, speed.toString());
         }
     }
 
