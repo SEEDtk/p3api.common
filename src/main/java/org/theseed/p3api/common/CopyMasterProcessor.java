@@ -18,11 +18,11 @@ import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
 /**
- * Copy a sete of genomes to a genome master directory.  Note that if the input is PATRIC, the output directory will
+ * Copy a set of genomes to a genome master directory.  Note that if the input is PATRIC, the output directory will
  * contain full genomes and the job is not restartable, so this is a bad idea for a large genome set.
  *
  * The positional parameters are the name of the input genome source and the name of the output directory.
- * The output directory should not exist unless "--clear" is specified.
+ * The output directory should not exist unless "--clear" or "--update" is specified.
  *
  * The command-line options are as follows.
  *
@@ -49,6 +49,10 @@ public class CopyMasterProcessor extends BaseProcessor {
     @Option(name = "--clear", usage = "if specified, the output directory will be erased before starting")
     private boolean clearFlag;
 
+    /** TRUE if the output directory is being updates*/
+    @Option(name = "--update", usage = "if specified, input genomes will add to or overwrite existing genomes")
+    private boolean updateFlag;
+
     /** type of input */
     @Option(name = "--source", usage = "type of genome input (master directory, normal, PATRIC ID file)")
     private GenomeSource.Type inType;
@@ -65,14 +69,20 @@ public class CopyMasterProcessor extends BaseProcessor {
     protected void setDefaults() {
         this.inType = GenomeSource.Type.DIR;
         this.clearFlag = false;
+        this.updateFlag = false;
     }
 
     @Override
     protected boolean validateParms() throws IOException, ParseFailureException {
+        if (this.updateFlag && this.clearFlag)
+            throw new ParseFailureException("Cannot specify both --clear and --update.");
         // Create the source stream.
         this.genomes = this.inType.create(this.inDir);
         // Create the output directory.
-        this.master = GenomeMultiDirectory.create(this.outDir, this.clearFlag);
+        if (this.updateFlag)
+            this.master = new GenomeMultiDirectory(this.outDir);
+        else
+            this.master = GenomeMultiDirectory.create(this.outDir, this.clearFlag);
         return true;
     }
 
