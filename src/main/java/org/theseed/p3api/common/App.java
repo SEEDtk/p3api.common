@@ -43,6 +43,9 @@ public class App
         case "fixMaster" :
             processor = new FixMasterProcessor();
             break;
+        case "copy" :
+            processor = new CopyMasterProcessor();
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }
