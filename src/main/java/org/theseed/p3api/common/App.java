@@ -13,6 +13,7 @@ import org.theseed.utils.BaseProcessor;
  * famCounts	count the protein families in genomes in a directory
  * roleCounts	count potentially-universal roles in a set of PATRIC genomes
  * simple		echo parameters (for testing)
+ * fixMaster	add SSU rRNA information to a master genome directory
  *
  */
 public class App
@@ -38,6 +39,9 @@ public class App
             break;
         case "simple" :
             processor = new SimpleProcessor();
+            break;
+        case "fixMaster" :
+            processor = new FixMasterProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
