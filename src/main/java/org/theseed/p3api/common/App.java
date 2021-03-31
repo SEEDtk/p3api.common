@@ -14,6 +14,7 @@ import org.theseed.utils.BaseProcessor;
  * roleCounts	count potentially-universal roles in a set of PATRIC genomes
  * simple		echo parameters (for testing)
  * fixMaster	add SSU rRNA information to a master genome directory
+ * clean		remove obsolete genomes from a master genome directory
  *
  */
 public class App
@@ -45,6 +46,9 @@ public class App
             break;
         case "copy" :
             processor = new CopyMasterProcessor();
+            break;
+        case "clean" :
+            processor = new CleanProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
