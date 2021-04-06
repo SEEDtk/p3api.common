@@ -15,6 +15,7 @@ import org.theseed.utils.BaseProcessor;
  * simple		echo parameters (for testing)
  * fixMaster	add SSU rRNA information to a master genome directory
  * clean		remove obsolete genomes from a master genome directory
+ * copy			copy genomes to a genome master directory
  *
  */
 public class App

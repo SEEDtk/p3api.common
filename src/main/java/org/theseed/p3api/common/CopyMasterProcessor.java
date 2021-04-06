@@ -31,7 +31,7 @@ import org.theseed.utils.ParseFailureException;
  *
  * --clear		erase the output directory before starting
  * --source		type of input (master directory, GTO directory, PATRIC ID file); default is GTO directory
- * --missing	only copy a genome if it is not already in the
+ * --missing	only copy a genome if it is not already in the output directory
  *
  * @author Bruce Parrello
  *
