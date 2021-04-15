@@ -16,6 +16,7 @@ import org.theseed.utils.BaseProcessor;
  * fixMaster	add SSU rRNA information to a master genome directory
  * clean		remove obsolete genomes from a master genome directory
  * copy			copy genomes to a genome master directory
+ * modulons		hook up the various modulon types for E coli
  *
  */
 public class App
@@ -50,6 +51,9 @@ public class App
             break;
         case "clean" :
             processor = new CleanProcessor();
+            break;
+        case "modulons" :
+            processor = new ModulonProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
