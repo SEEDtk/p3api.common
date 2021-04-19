@@ -24,13 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
+import org.theseed.genome.SubsystemRow;
 import org.theseed.io.LineReader;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.magic.MagicMap;
+import org.theseed.subsystems.SubsystemRowDescriptor;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
 /**
- * This is a one-off utility script to hook up gene IDs in the MG1655 wild type with atomic regulon numbers and
+ * This is a one-off utility script to hook up gene IDs in the MG1655 wild type with atomic regulon numbers, subsystems, and
  * iModulon names.  The atomic regulon numbers are associated with FIG IDs in the CoreSEED 83333.1 genome.  These
  * have to be translated to b-numbers so they can be associated with the wild type genes.
  *
@@ -67,10 +70,14 @@ public class ModulonProcessor extends BaseProcessor {
     private Map<String, List<String>> modulonMap;
     /** map of b-numbers to wild-type fig IDs */
     private Map<String, String> bNumFigMap;
+    /** map of b-numbers to subsystems */
+    private Map<String, String> bNumSubMap;
+    /** CoreSEED genome */
+    private Genome coreGenome;
     /** output file stream */
     private OutputStream outStream;
     /** number of features in an E coli genome */
-    private static final int NUM_FEATURES = 4000;
+    private static final int NUM_FEATURES = 4200;
     /** b-number pattern matcher */
     private static final Pattern B_NUMBER = Pattern.compile("b\\d+");
 
@@ -120,6 +127,9 @@ public class ModulonProcessor extends BaseProcessor {
             log.info("Output will be to the standard output.");
             this.outStream = System.out;
         }
+        // Load the coreSEED genome.
+        log.info("Reading core genome from {}.", this.coreFile);
+        this.coreGenome = new Genome(this.coreFile);
         return true;
     }
 
@@ -133,7 +143,7 @@ public class ModulonProcessor extends BaseProcessor {
             // Create the map of b-numbers to iModulons.
             this.createModulonMap();
             // Now we read the AR file to produce the output.
-            writer.println("fig_id\tmodulon\tregulon");
+            writer.println("fig_id\tmodulon\tregulon\tsubsystems");
             log.info("Reading regulon file {} and producing output.", this.arFile);
             try (TabbedLineReader arStream = new TabbedLineReader(this.arFile)) {
                 int count = 0;
@@ -145,7 +155,8 @@ public class ModulonProcessor extends BaseProcessor {
                         List<String> modulons = this.modulonMap.getOrDefault(bNum, Collections.emptyList());
                         String refId = this.bNumFigMap.get(bNum);
                         if (refId != null) {
-                            writer.format("%s\t%s\t%s%n", refId, StringUtils.join(modulons, ','), arNum);
+                            String subList = this.bNumSubMap.getOrDefault(bNum, "");
+                            writer.format("%s\t%s\t%s\t%s%n", refId, StringUtils.join(modulons, ','), arNum, subList);
                             count++;
                         }
                     }
@@ -183,18 +194,31 @@ public class ModulonProcessor extends BaseProcessor {
     }
 
     /**
-     * This method reads the CoreSEED reference genome to create a map of FIG IDs to b-numbers.
+     * This method reads the CoreSEED reference genome to create a map of FIG IDs to b-numbers and a map
+     * of b-numbers to subsystems.
      *
      * @throws IOException
      */
     private void createCoreMap() throws IOException {
-        log.info("Reading core genome from {}.", this.coreFile);
+        // Create the output maps.
         this.coreBMap = new HashMap<String, String>(NUM_FEATURES);
-        Genome coreGenome = new Genome(this.coreFile);
-        for (Feature feat : coreGenome.getPegs()) {
+        this.bNumSubMap = new HashMap<String, String>(NUM_FEATURES);
+        // This map is used to generate subsystem IDs.
+        MagicMap<SubsystemRowDescriptor> subMap = new MagicMap<SubsystemRowDescriptor>(new SubsystemRowDescriptor());
+        for (Feature feat : this.coreGenome.getPegs()) {
             String bNum = getBNumber(feat);
-            if (bNum != null)
+            if (bNum != null) {
                 this.coreBMap.put(feat.getId(), bNum);
+                // Now we need to compute the subsystems.
+                List<String> subIds = new ArrayList<String>();
+                for (SubsystemRow row : feat.getSubsystemRows()) {
+                    SubsystemRowDescriptor sub = subMap.getByName(row.getName());
+                    if (sub == null)
+                        sub = new SubsystemRowDescriptor(row, subMap);
+                    subIds.add(sub.getId());
+                }
+                this.bNumSubMap.put(bNum, StringUtils.join(subIds, ","));
+            }
         }
         log.info("{} b-numbers found in {}.", this.coreBMap.size(), coreGenome);
     }
