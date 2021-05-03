@@ -33,22 +33,25 @@ import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
 /**
- * This is a one-off utility script to hook up gene IDs in the MG1655 wild type with atomic regulon numbers, subsystems, and
- * iModulon names.  The atomic regulon numbers are associated with FIG IDs in the CoreSEED 83333.1 genome.  These
+ * This is a one-off utility script to hook up gene IDs in the MG1655 wild type with atomic regulon numbers, subsystems,
+ * operons, and iModulon names.  The atomic regulon numbers are associated with FIG IDs in the CoreSEED 83333.1 genome.  These
  * have to be translated to b-numbers so they can be associated with the wild type genes.
  *
  * The basic strategy is get the features from the CoreSEED genome and map them to b-numbers.  Then we map the
- * b-numbers to modulon IDs.  Finally, the b-numbers are mapped to the wild-type feature IDs.
+ * b-numbers to modulon IDs and operon IDs.  Finally, the b-numbers are mapped to the wild-type feature IDs.
  * The final table contains the wild-type FIG ID, iModulon name, and AR number.
  *
  * The positional parameters are the name of the wild type GTO, the name of the CoreSEED GTO, and the
- * names of the atomic regulon and imodulon files.
+ * names of the atomic regulon, imodulon, and operon files.
  *
  * The atomic regulon file is tab-delimited with headers.  The first column is the AR number and the second is the
  * CoreSEED FIG ID.
  *
  * The iModulon file is comma-separated.  The first column is the modulon name and the remaining columns are the
  * b-numbers of the modulon's genes.
+ *
+ * The operon file is tab-delimited with headers.  The b-number is in a column called "b-number", and the operon name
+ * in a column called "operon".
  *
  * The command-line options are as follows.
  *
@@ -68,6 +71,8 @@ public class ModulonProcessor extends BaseProcessor {
     private Map<String, String> coreBMap;
     /** map of b-numbers to iModulons */
     private Map<String, List<String>> modulonMap;
+    /** map of b-numbers to operon names */
+    private Map<String, String> operonMap;
     /** map of b-numbers to wild-type fig IDs */
     private Map<String, String> bNumFigMap;
     /** map of b-numbers to subsystems */
@@ -88,20 +93,24 @@ public class ModulonProcessor extends BaseProcessor {
     private File outFile;
 
     /** name of the GTO for the RNA seq reference E coli */
-    @Argument(index = 0, metaVar = "wildType.gto", usage = "GTO for the main reference E coli genome")
+    @Argument(index = 0, metaVar = "wildType.gto", usage = "GTO for the main reference E coli genome", required = true)
     private File wildFile;
 
     /** name of the GTO for the atomic regulon reference E coli */
-    @Argument(index = 1, metaVar = "coreSeed.gto", usage = "GTO for the CoreSEED reference E coli genome")
+    @Argument(index = 1, metaVar = "coreSeed.gto", usage = "GTO for the CoreSEED reference E coli genome", required = true)
     private File coreFile;
 
     /** name of the file containing the atomic regulons */
-    @Argument(index = 2, metaVar = "arFile.tbl", usage = "atomic regulon table")
+    @Argument(index = 2, metaVar = "arFile.tbl", usage = "atomic regulon table", required = true)
     private File arFile;
 
     /** name of the file containing the iModulons */
-    @Argument(index = 3, metaVar = "imodulon.csv", usage = "iModulon table")
+    @Argument(index = 3, metaVar = "imodulon.csv", usage = "iModulon table", required = true)
     private File modFile;
+
+    /** name of the file containing the operons */
+    @Argument(index = 4, metaVar = "operons.tbl", usage = "operon table", required = true)
+    private File operonFile;
 
     @Override
     protected void setDefaults() {
@@ -119,6 +128,8 @@ public class ModulonProcessor extends BaseProcessor {
             throw new FileNotFoundException("Atomic regulon file " + this.arFile + " is not found or unreadable.");
         if (! this.modFile.canRead())
             throw new FileNotFoundException("Modulon file " + this.modFile + " is not found or unreadable.");
+        if (! this.operonFile.canRead())
+            throw new FileNotFoundException("Operon file " + this.operonFile + " is not found or unreadable.");
         // Create the output file stream.
         if (this.outFile != null) {
             log.info("Output will be to {}.", this.outFile);
@@ -142,8 +153,10 @@ public class ModulonProcessor extends BaseProcessor {
             this.createCoreMap();
             // Create the map of b-numbers to iModulons.
             this.createModulonMap();
+            // Create the map of b-numbers to operons.
+            this.createOperonMap();
             // Now we read the AR file to produce the output.
-            writer.println("fig_id\tmodulon\tregulon\tsubsystems");
+            writer.println("fig_id\tmodulon\tregulon\toperon\tsubsystems");
             log.info("Reading regulon file {} and producing output.", this.arFile);
             try (TabbedLineReader arStream = new TabbedLineReader(this.arFile)) {
                 int count = 0;
@@ -156,7 +169,8 @@ public class ModulonProcessor extends BaseProcessor {
                         String refId = this.bNumFigMap.get(bNum);
                         if (refId != null) {
                             String subList = this.bNumSubMap.getOrDefault(bNum, "");
-                            writer.format("%s\t%s\t%s\t%s%n", refId, StringUtils.join(modulons, ','), arNum, subList);
+                            String operon = this.operonMap.getOrDefault(bNum, "");
+                            writer.format("%s\t%s\t%s\t%s\t%s%n", refId, StringUtils.join(modulons, ','), arNum, operon, subList);
                             count++;
                         }
                     }
@@ -167,6 +181,30 @@ public class ModulonProcessor extends BaseProcessor {
             if (this.outFile != null)
                 this.outStream.close();
         }
+    }
+
+    /**
+     * This method reads the operon file to create a map of b-numbers to operon names.
+     *
+     * @throws IOException
+     */
+    private void createOperonMap() throws IOException {
+        log.info("Processing operon map.");
+        int count = 0;
+        try (TabbedLineReader operonStream = new TabbedLineReader(this.operonFile)) {
+            this.operonMap = new HashMap<String, String>(NUM_FEATURES);
+            int bCol = operonStream.findField("b-number");
+            int opCol = operonStream.findField("operon");
+            // Loop through the lines, building the map.
+            for (TabbedLineReader.Line line : operonStream) {
+                String opName = line.get(opCol);
+                if (! opName.isEmpty()) {
+                    this.operonMap.put(line.get(bCol), opName);
+                    count++;
+                }
+            }
+        }
+        log.info("{} features have operons.", count);
     }
 
     /**
