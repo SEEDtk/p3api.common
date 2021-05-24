@@ -18,6 +18,7 @@ import org.theseed.utils.BaseProcessor;
  * copy			copy genomes to a genome master directory
  * modulons		hook up the various modulon types for E coli
  * ssuCheck		verify SSU rRNA sequences against the SILVA database
+ * rnaStats		compute statistics on SSU rRNA lengths
  *
  */
 public class App
@@ -58,6 +59,9 @@ public class App
             break;
         case "rnaCheck" :
             processor = new RnaCheckProcessor();
+            break;
+        case "rnaStats" :
+            processor = new RnaStatsProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
