@@ -54,6 +54,11 @@
         <artifactId>j2html</artifactId>
         <version>1.4.0</version>
     </dependency>
+    <dependency>
+        <groupId>org.theseed</groupId>
+        <artifactId>sequence</artifactId>
+        <version>1.0.0</version>
+    </dependency>
   </dependencies>
 
   <build>

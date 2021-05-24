@@ -17,6 +17,7 @@ import org.theseed.utils.BaseProcessor;
  * clean		remove obsolete genomes from a master genome directory
  * copy			copy genomes to a genome master directory
  * modulons		hook up the various modulon types for E coli
+ * ssuCheck		verify SSU rRNA sequences against the SILVA database
  *
  */
 public class App
@@ -54,6 +55,9 @@ public class App
             break;
         case "modulons" :
             processor = new ModulonProcessor();
+            break;
+        case "rnaCheck" :
+            processor = new RnaCheckProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
