@@ -49,6 +49,8 @@ public class RnaStatsProcessor extends BaseReportProcessor {
     private DescriptiveStatistics lengths;
     /** count of lengths below the limit */
     private int shortCount;
+    /** count of missing SSU rRNAs */
+    private int missingCount;
     /** input genome source */
     private GenomeSource genomes;
     /** list of genomeIDs to process */
@@ -76,6 +78,7 @@ public class RnaStatsProcessor extends BaseReportProcessor {
     protected void setReporterDefaults() {
         this.minLen = 1400;
         this.filterFile = null;
+        this.sourceType = GenomeSource.Type.DIR;
     }
 
     @Override
@@ -100,30 +103,33 @@ public class RnaStatsProcessor extends BaseReportProcessor {
     protected void runReporter(PrintWriter writer) throws Exception {
         // Initialize the statistical objects.
         this.shortCount = 0;
+        this.missingCount = 0;
         this.lengths = new DescriptiveStatistics();
         // Loop through the genomes.
         int gCount = 0;
         for (String genomeId : this.idList) {
             Genome genome = this.genomes.getGenome(genomeId);
             int len = genome.getSsuRRna().length();
-            this.lengths.addValue((double) len);
-            if (len < this.minLen)
-                this.shortCount++;
+            if (len == 0)
+                this.missingCount++;
+            else {
+                this.lengths.addValue((double) len);
+                if (len < this.minLen)
+                    this.shortCount++;
+            }
             gCount++;
             if (gCount % 100 == 0)
-                log.info("{} of {} genomes processed.  {} were too short.", gCount, this.idList.size(), this.shortCount);
+                log.info("{} of {} genomes processed.  {} rRNAs were missing, {} were too short.", gCount, this.idList.size(),
+                        this.missingCount, this.shortCount);
         }
-        writer.format("%s genomes processed.  %d RNAs were too short (length < %d).%n", gCount, this.shortCount, this.minLen);
+        writer.format("%s genomes processed.  %d RNAs were missing and %d were too short (length < %d).%n", gCount,
+                this.missingCount, this.shortCount, this.minLen);
         writer.format("Minimum length is %d, maximum is %d, mean is %6.2f, median is %6.2f.%n", (int) this.lengths.getMin(),
                 (int) this.lengths.getMax(), this.lengths.getMean(), this.lengths.getPercentile(50.0));
         writer.println();
         writer.println("Percentile\tlength");
         for (double qi = 10.0; qi < 100.0; qi += 10.0)
             writer.format("%6.0f\t%8.2f%n", qi, this.lengths.getPercentile(qi));
-
-        for (double qi = 10.0; qi < 100.0; qi += 10.0) {
-
-        }
     }
 
 }
