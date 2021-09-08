@@ -17,7 +17,7 @@ import org.theseed.utils.BaseProcessor;
  * clean		remove obsolete genomes from a master genome directory
  * copy			copy genomes to a genome master directory
  * modulons		hook up the various modulon types for E coli
- * ssuCheck		verify SSU rRNA sequences against the SILVA database
+ * rnaCheck		verify SSU rRNA sequences against the SILVA database
  * rnaStats		compute statistics on SSU rRNA lengths
  * rnaVerify	compute statistics on intergenic SSU rRNA distances
  *
