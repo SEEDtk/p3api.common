@@ -19,7 +19,7 @@ import org.theseed.utils.BaseProcessor;
  * modulons		hook up the various modulon types for E coli
  * rnaCheck		verify SSU rRNA sequences against the SILVA database
  * rnaStats		compute statistics on SSU rRNA lengths
- * rnaVerify	compute statistics on intergenic SSU rRNA distances
+ * dnaDist		compute a the maximum distance between DNA FASTA sequences
  *
  */
 public class App
@@ -64,8 +64,8 @@ public class App
         case "rnaStats" :
             processor = new RnaStatsProcessor();
             break;
-        case "rnaVerify" :
-            processor = new RnaVerifyProcessor();
+        case "dnaDist" :
+            processor = new DnaDistProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
