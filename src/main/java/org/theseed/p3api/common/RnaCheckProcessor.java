@@ -115,7 +115,7 @@ public class RnaCheckProcessor extends BaseReportProcessor {
             log.info("Connecting to BLAST database at {}.", this.silvaFile);
             this.silvaDB = DnaBlastDB.createOrLoad(this.silvaFile, 11);
         } catch (InterruptedException e) {
-            throw new IOException("Interruption during BLAST database make: " + e.getMessage());
+            throw new IOException("Interruption during BLAST database make: " + e.toString());
         }
         // Connect to the genome source.
         log.info("Loading genomes at {}.", this.genomeDir);
