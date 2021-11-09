@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Option;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.utils.BaseProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -49,7 +49,7 @@ public class SubFamilyProcessor extends BaseProcessor {
     /** input stream */
     TabbedLineReader inStream;
     /** PATRIC connection */
-    private Connection p3;
+    private P3Connection p3;
 
     // COMMAND LINE
 
@@ -89,7 +89,7 @@ public class SubFamilyProcessor extends BaseProcessor {
     @Override
     public void runCommand() {
         // Connect to PATRIC.
-        this.p3 = new Connection();
+        this.p3 = new P3Connection();
         // Create the master family set.
         this.allFamilies = new HashSet<String>();
         System.out.println("subsystem_id\tfamilies");
@@ -112,10 +112,10 @@ public class SubFamilyProcessor extends BaseProcessor {
         // Get all the features for the subsystem.
         Collection<JsonObject> features = p3.getRecords(Table.SUBSYSTEM_ITEM, "subsystem_id", Collections.singleton(subsystem), "patric_id");
         // Get the protein family for each feature.
-        Collection<String> fids = features.stream().map(x -> Connection.getString(x, "patric_id")).collect(Collectors.toSet());
+        Collection<String> fids = features.stream().map(x -> P3Connection.getString(x, "patric_id")).collect(Collectors.toSet());
         Map<String, JsonObject> families = p3.getRecords(Table.FEATURE, fids, "pgfam_id");
         // Convert the protein family IDs into a set.
-        Set<String> retVal = families.values().stream().map(x -> Connection.getString(x, "pgfam_id")).collect(Collectors.toSet());
+        Set<String> retVal = families.values().stream().map(x -> P3Connection.getString(x, "pgfam_id")).collect(Collectors.toSet());
         return retVal;
     }
 

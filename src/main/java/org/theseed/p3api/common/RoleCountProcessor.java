@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.proteins.Role;
 import org.theseed.proteins.RoleMap;
 import org.theseed.utils.BaseProcessor;
@@ -57,7 +57,7 @@ public class RoleCountProcessor extends BaseProcessor {
     /** list of acceptable genome IDs */
     private Set<String> genomes;
     /** connection to PATRIC */
-    private Connection p3;
+    private P3Connection p3;
     /** counts read from checkpoint file */
     private CountMap<String> oldCounts;
     /** output stream for checkpoint file */
@@ -135,7 +135,7 @@ public class RoleCountProcessor extends BaseProcessor {
             }
         }
         // Connect to PATRIC.
-        this.p3 = new Connection();
+        this.p3 = new P3Connection();
         return true;
     }
 
@@ -156,10 +156,10 @@ public class RoleCountProcessor extends BaseProcessor {
                 CountMap<String> gCounts = new CountMap<String>();
                 for (JsonObject feature : features) {
                     // Verify the genome.
-                    String genomeId = Connection.getString(feature, "genome_id");
+                    String genomeId = P3Connection.getString(feature, "genome_id");
                     if (this.genomes.contains(genomeId)) {
                         // Verify the role.
-                        String product = Connection.getString(feature, "product");
+                        String product = P3Connection.getString(feature, "product");
                         List<Role> roles = Feature.usefulRoles(this.roles, product);
                         if (roles.contains(role))
                             gCounts.count(genomeId);

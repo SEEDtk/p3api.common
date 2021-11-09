@@ -16,8 +16,8 @@ import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.p3api.Criterion;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
@@ -63,14 +63,14 @@ public class FixMasterProcessor extends BaseProcessor {
     @Override
     protected void runCommand() throws Exception {
         // Get the cds counts for all the genomes.
-        Connection p3 = new Connection();
-        List<JsonObject> genomes = p3.getRecords(Table.GENOME, "kingdom", Connection.DOMAINS,
+        P3Connection p3 = new P3Connection();
+        List<JsonObject> genomes = p3.getRecords(Table.GENOME, "kingdom", P3Connection.DOMAINS,
                 "genome_id,patric_cds", Criterion.EQ("public", "1"),
                 Criterion.NE("genome_status", "Plasmid"));
         Map<String, Integer> counts = new HashMap<String, Integer>(genomes.size());
         for (JsonObject genome : genomes) {
-            String id = Connection.getString(genome, "genome_id");
-            int count = Connection.getInt(genome, "patric_cds");
+            String id = P3Connection.getString(genome, "genome_id");
+            int count = P3Connection.getInt(genome, "patric_cds");
             if (count > 0)
                 counts.put(id, count);
             else

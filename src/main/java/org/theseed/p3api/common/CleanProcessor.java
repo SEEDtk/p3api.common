@@ -16,7 +16,7 @@ import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.genome.GenomeMultiDirectory;
-import org.theseed.p3api.Connection;
+import org.theseed.p3api.P3Connection;
 import org.theseed.utils.BaseProcessor;
 import org.theseed.utils.ParseFailureException;
 
@@ -79,14 +79,14 @@ public class CleanProcessor extends BaseProcessor {
      */
     private Set<String> getDeleteSet(GenomeMultiDirectory genomes) {
         List<JsonObject> goodList = new ArrayList<JsonObject>(genomes.size());
-        Connection p3 = new Connection();
+        P3Connection p3 = new P3Connection();
         p3.addAllProkaryotes(goodList);
         log.info("{} eligible genomes in PATRIC.", goodList.size());
         // Get the set of genome IDs in the input directory.
         Set<String> retVal = new HashSet<String>(genomes.getIDs());
         // Remove the good ones, leaving only the bad ones.
         for (JsonObject good : goodList) {
-            String goodId = Connection.getString(good, "genome_id");
+            String goodId = P3Connection.getString(good, "genome_id");
             retVal.remove(goodId);
         }
         log.info("{} genomes will be deleted.", retVal.size());

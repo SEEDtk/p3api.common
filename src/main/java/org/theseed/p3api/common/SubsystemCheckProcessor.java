@@ -14,8 +14,8 @@ import org.kohsuke.args4j.Argument;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
-import org.theseed.p3api.Connection;
-import org.theseed.p3api.Connection.Table;
+import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3Connection.Table;
 import org.theseed.proteins.Role;
 import org.theseed.subsystems.SubsystemProjector;
 import org.theseed.subsystems.SubsystemSpec;
@@ -69,7 +69,7 @@ public class SubsystemCheckProcessor extends BaseProcessor {
         GenomeDirectory genomes = new GenomeDirectory(this.inDir);
         log.info("{} genomes in input directory.", genomes.size());
         // Connect to PATRIC.
-        Connection p3 = new Connection();
+        P3Connection p3 = new P3Connection();
         // Load the subsystem projector.
         SubsystemProjector projector = SubsystemProjector.Load(this.projectorFile);
         // Write the report header.
@@ -80,8 +80,8 @@ public class SubsystemCheckProcessor extends BaseProcessor {
             List<JsonObject> subsystemItems = p3.getRecords(Table.SUBSYSTEM_ITEM, "genome_id", Collections.singleton(genome.getId()),
                     "patric_id,subsystem_name");
             for (JsonObject record : subsystemItems) {
-                String fid = Connection.getString(record, "patric_id");
-                String subName = Connection.getString(record, "subsystem_name");
+                String fid = P3Connection.getString(record, "patric_id");
+                String subName = P3Connection.getString(record, "subsystem_name");
                 Feature feat = genome.getFeature(fid);
                 if (feat != null) {
                     total++;
