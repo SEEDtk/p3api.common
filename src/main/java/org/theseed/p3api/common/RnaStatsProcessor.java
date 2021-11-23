@@ -63,7 +63,7 @@ public class RnaStatsProcessor extends BaseReportProcessor {
     private File filterFile;
 
     /** input genome source type */
-    @Option(name = "--type", aliases = { "-t" }, usage = "type of input genome source")
+    @Option(name = "--type", aliases = { "-t", "--source" }, usage = "type of input genome source")
     private GenomeSource.Type sourceType;
 
     /** minimum RNA length for short-length check */

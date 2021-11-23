@@ -74,7 +74,7 @@ public class RnaCheckProcessor extends BaseReportProcessor {
     private double eValue;
 
     /** input genome source type */
-    @Option(name = "--type", aliases = { "-t" }, usage = "type of input genome source")
+    @Option(name = "--type", aliases = { "-t", "--source" }, usage = "type of input genome source")
     private GenomeSource.Type sourceType;
 
     /** output report format */
