@@ -71,7 +71,7 @@ public class SubsystemCheckProcessor extends BaseProcessor {
         // Connect to PATRIC.
         P3Connection p3 = new P3Connection();
         // Load the subsystem projector.
-        SubsystemProjector projector = SubsystemProjector.Load(this.projectorFile);
+        SubsystemProjector projector = SubsystemProjector.load(this.projectorFile);
         // Write the report header.
         System.out.println("genome\tfeature_id\trole\tmissing_subsystem\treason");
         // Loop through the genomes.
