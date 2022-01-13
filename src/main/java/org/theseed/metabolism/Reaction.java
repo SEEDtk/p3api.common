@@ -4,13 +4,14 @@
 package org.theseed.metabolism;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-
 import com.github.cliftonlabs.json_simple.JsonArray;
 import com.github.cliftonlabs.json_simple.JsonKey;
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -149,6 +150,10 @@ public class Reaction implements Comparable<Reaction> {
             else
                 retVal = String.format("%d*%s", coeff, this.biggId);
             return retVal;
+        }
+
+        public String getMetabolite() {
+            return this.biggId;
         }
 
     }
@@ -322,6 +327,39 @@ public class Reaction implements Comparable<Reaction> {
     @Override
     public String toString() {
         return "Reaction " + this.id + "(" + this.getName() + ")";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + this.id;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Reaction other = (Reaction) obj;
+        if (this.id != other.id)
+            return false;
+        return true;
+    }
+
+    /**
+     * @return a list of the eligible output metabolite elements for this reaction
+     */
+    public Collection<Stoich> getOutputs() {
+        List<Stoich> retVal = this.metabolites;
+        if (! this.reversible)
+            retVal = this.metabolites.stream().filter(x -> x.isProduct())
+                    .collect(Collectors.toList());
+        return retVal;
     }
 
 }

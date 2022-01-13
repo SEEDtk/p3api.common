@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,6 +104,19 @@ public class MetaModelTest {
                 assertThat(altCopy, sameInstance(metaNode));
             }
         }
+        // Check the successor map.
+        var successors = model.getSuccessors("frog");
+        assertThat("Successors found for invalid metabolite.", successors.isEmpty());
+        List<String> succNames = model.getSuccessors("thr__L_c").stream().map(x -> x.getBiggId()).collect(Collectors.toList());
+        assertThat(succNames, containsInAnyOrder("THRD_L", "THRA", "THRD"));
+        succNames = model.getSuccessors("2h3oppan_c").stream().map(x -> x.getBiggId()).collect(Collectors.toList());
+        assertThat(succNames, containsInAnyOrder("HPYRI"));
+        // Check the producer map.
+        var producers = model.getProducers("frog");
+        assertThat("Producers found for invalid metabolite.", producers.isEmpty());
+        List<String> prodNames = model.getProducers("ser__L_c").stream().map(x  -> x.getBiggId()).collect(Collectors.toList());
+        assertThat(prodNames, containsInAnyOrder("SERAT", "GHMT2r", "LSERDHr"));
+
     }
 
 }

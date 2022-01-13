@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -50,6 +51,10 @@ public class MetaModel {
     private Map<String, Set<Reaction>> reactionMap;
     /** set of all reactions not associated with features */
     private Set<Reaction> orphans;
+    /** map of metabolite BiGG IDs to successor reactions */
+    private Map<String, Set<Reaction>> successorMap;
+    /** map of metabolite BiGG IDs to reactions that produce them */
+    private Map<String, Set<Reaction>> producerMap;
     /** map of metabolite BiGG IDs to nodes */
     private Map<String, List<ModelNode.Metabolite>> metaboliteMap;
     /** map of node IDs to nodes */
@@ -81,15 +86,20 @@ public class MetaModel {
         } catch (JsonException e) {
             throw new IOException("JSON error in " + inFile + ":" + e.toString());
         }
-        // Now we want to build the reaction hash.  First, we need a map of aliases
+        // Get the nodes and compute the size of a node-based hash.
+        JsonObject nodes = (JsonObject) this.modelObject.get("nodes");
+        final int nodeHashSize = nodes.size() * 4 / 3 + 1;
+        // Now we want to build the reaction hashes.  First, we need a map of aliases
         // to FIG IDs.
         var aliasMap = genome.getAliasMap();
-        // Now we loop through the reactions, creating the map.
+        // Now we loop through the reactions, creating the maps.
         JsonObject reactions = (JsonObject) this.modelObject.get("reactions");
         int nReactions = reactions.size();
         log.info("{} reactions found in map {}.", nReactions, this.mapName);
         final int hashSize = reactions.size() * 4 / 3 + 1;
         this.reactionMap = new HashMap<String, Set<Reaction>>(hashSize);
+        this.successorMap = new HashMap<String, Set<Reaction>>(nodeHashSize);
+        this.producerMap = new HashMap<String, Set<Reaction>>(nodeHashSize);
         this.orphans = new HashSet<Reaction>();
         for (Map.Entry<String, Object> reactionEntry : reactions.entrySet()) {
             int reactionId = Integer.valueOf(reactionEntry.getKey());
@@ -104,19 +114,35 @@ public class MetaModel {
                     log.warn("No features found for gene alias \"" + gene + "\" in reaction " + reaction.toString());
                 else {
                     for (String fid : fids) {
-                        Set<Reaction> fidReactions = this.reactionMap.computeIfAbsent(fid, x -> new TreeSet<Reaction>());
+                        Set<Reaction> fidReactions = this.reactionMap.computeIfAbsent(fid,
+                                x -> new TreeSet<Reaction>());
                         fidReactions.add(reaction);
                         found = true;
                     }
+
                 }
             }
             // If we did not connect this reaction to a gene, make it an orphan.
             if (! found)
                 this.orphans.add(reaction);
+            // For each metabolite, add this reaction as a successor or consumer,
+            // as appropriate.
+            for (Reaction.Stoich stoich : reaction.getMetabolites()) {
+                String compound = stoich.getMetabolite();
+                if (reaction.isReversible() || ! stoich.isProduct()) {
+                    Set<Reaction> successors = this.successorMap.computeIfAbsent(compound,
+                            x -> new TreeSet<Reaction>());
+                    successors.add(reaction);
+                }
+                if (reaction.isReversible() || stoich.isProduct()) {
+                    Set<Reaction> producers = this.producerMap.computeIfAbsent(compound,
+                            x -> new TreeSet<Reaction>());
+                    producers.add(reaction);
+                }
+            }
         }
         // Now set up the nodes.
-        JsonObject nodes = (JsonObject) this.modelObject.get("nodes");
-        this.nodeMap = new HashMap<Integer, ModelNode>(nodes.size() * 4 / 3 + 1);
+        this.nodeMap = new HashMap<Integer, ModelNode>(nodeHashSize);
         this.metaboliteMap = new HashMap<String, List<ModelNode.Metabolite>>(nodes.size());
         for (Map.Entry<String, Object> nodeEntry : nodes.entrySet()) {
             int nodeId = Integer.valueOf(nodeEntry.getKey());
@@ -249,6 +275,87 @@ public class MetaModel {
      */
     public Map<String, List<ModelNode.Metabolite>> getMetaboliteMap() {
         return this.metaboliteMap;
+    }
+
+    /**
+     * @return the pathways between two metabolites
+     *
+     * @param bigg1		BiGG ID of start metabolite
+     * @param bigg2		BiGG ID of end metabolite
+     */
+    public Collection<Pathway> getPathways(String bigg1, String bigg2) {
+        // This will hold the pathways we like.
+        List<Pathway> retVal = new ArrayList<Pathway>();
+        // We are doing a depth-first search.  This will be our processing stack.
+        Stack<Pathway> stack = new Stack<Pathway>();
+        // Get the starting reactions.
+        Set<Reaction> starters = this.getSuccessors(bigg1);
+        // Verify that the end metabolite can be produced.
+        boolean endOk = this.producerMap.containsKey(bigg2);
+        if  (! endOk)
+            log.warn("No reactions produce metabolite \"" + bigg2 + "\".");
+        else if (starters.isEmpty())
+            log.warn("No reactions use metabolite \"" + bigg1 + "\".");
+        else {
+            // Loop through the starters, setting up the initial pathways.
+            for (Reaction starter : starters) {
+                Collection<Reaction.Stoich> outputs = starter.getOutputs();
+                for (Reaction.Stoich node : outputs)
+                    stack.push(new Pathway(starter, node));
+            }
+            // Now process the stack until it is empty.
+            while (! stack.empty()) {
+                Pathway path = stack.pop();
+                // Get the last element for this pathway.
+                Pathway.Element terminus = path.getLast();
+                // Get the BiGG ID for the metabolite.
+                String outputId = terminus.getOutput();
+                // If we have found our output, we are done.  We output the pathway
+                // and don't add anything to the stack.
+                if (outputId.equals(bigg2))
+                    retVal.add(path);
+                else {
+                    // Get the reactions that use this metabolite.
+                    Set<Reaction> successors = this.getSuccessors(outputId);
+                    // Now we extend the path.  We take care here not to re-add a
+                    // reaction already in the path.  This is the third and final
+                    // way a search can end.
+                    for (Reaction successor : successors) {
+                        if (! path.contains(successor)) {
+                            // Add a pathway for each output of this reaction.
+                            Collection<Reaction.Stoich> outputs = successor.getOutputs();
+                            for (Reaction.Stoich output : outputs) {
+                                Pathway newPath = path.clone().add(successor, output);
+                                stack.push(newPath);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return retVal;
+    }
+
+    /**
+     * Compute the set of reactions that take the specified metabolite as input.
+     *
+     * @param product	BiGG ID of the metabolite whose reactions are desired
+     *
+     * @return the set of successor reactions (which may be empty)
+     */
+    Set<Reaction> getSuccessors(String product) {
+        return this.successorMap.getOrDefault(product, NO_REACTIONS);
+    }
+
+    /**
+     * Compute the set of reactions that produce the specified metabolite as output.
+     *
+     * @param product	BiGG ID of the metabolite whose reactions are desired
+     *
+     * @return the set of producing reactions (which may be empty)
+     */
+    Set<Reaction> getProducers(String product) {
+        return this.producerMap.getOrDefault(product, NO_REACTIONS);
     }
 
 }
