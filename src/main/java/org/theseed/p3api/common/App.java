@@ -20,6 +20,8 @@ import org.theseed.utils.BaseProcessor;
  * rnaCheck		verify SSU rRNA sequences against the SILVA database
  * rnaStats		compute statistics on SSU rRNA lengths
  * dnaDist		compute a the maximum distance between DNA FASTA sequences
+ * bFinder		return the b-numbers for a send of gene names
+ * binCheck		remove bad genomes from a binning reference genome FASTA
  *
  */
 public class App
@@ -66,6 +68,12 @@ public class App
             break;
         case "dnaDist" :
             processor = new DnaDistProcessor();
+            break;
+        case "bFinder" :
+            processor = new BFinderProcessor();
+            break;
+        case "binCheck" :
+            processor = new BinCheckProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
