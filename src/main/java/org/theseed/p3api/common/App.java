@@ -22,6 +22,7 @@ import org.theseed.utils.BaseProcessor;
  * dnaDist		compute a the maximum distance between DNA FASTA sequences
  * bFinder		return the b-numbers for a send of gene names
  * binCheck		remove bad genomes from a binning reference genome FASTA
+ * hammerX		analyze the fake-fasta hammer test
  *
  */
 public class App
@@ -74,6 +75,9 @@ public class App
             break;
         case "binCheck" :
             processor = new BinCheckProcessor();
+            break;
+        case "hammerX" :
+            processor = new HammerTestProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
