@@ -83,6 +83,9 @@ public class App
         case "zipCheck" :
             processor = new ZipCheckProcessor();
             break;
+        case "hammerCheck" :
+            processor = new HammerCheckProcessor();
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }
