@@ -24,6 +24,7 @@ import org.theseed.utils.BaseProcessor;
  * binCheck		remove bad genomes from a binning reference genome FASTA
  * hammerX		analyze the fake-fasta hammer test
  * zipCheck		validate a master directory with the ZipException bug
+ * essential	determine which features in a list are essential
  *
  */
 public class App
@@ -85,6 +86,9 @@ public class App
             break;
         case "hammerCheck" :
             processor = new HammerCheckProcessor();
+            break;
+        case "essential" :
+            processor = new EssentialProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
