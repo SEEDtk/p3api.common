@@ -3,8 +3,8 @@
  */
 package org.theseed.p3api.common;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
@@ -24,8 +24,8 @@ public class SimpleProcessor extends BaseProcessor {
 
     // COMMAND-LINE OPTIONS
 
-    @Argument(index = 0, usage = "file name to echo", required = true)
-    private File parmFile;
+    @Argument(index = 0, usage = "parameters  to echo", required = true)
+    private List<String> parms;
 
     @Override
     protected void setDefaults() {
@@ -38,8 +38,8 @@ public class SimpleProcessor extends BaseProcessor {
 
     @Override
     protected void runCommand() throws Exception {
-        log.info("File name is {}.", this.parmFile);
-        System.out.println("Full path of file is " + this.parmFile.getAbsolutePath());
+        for (String parm : parms)
+            log.info("Parm is \"{}\".", parm);
     }
 
 }
