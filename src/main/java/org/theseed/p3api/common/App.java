@@ -94,6 +94,9 @@ public class App
         case "rnaFix" :
             processor = new RnaFixProcessor();
             break;
+        case "rnaFix2" :
+            processor = new RnaFixProcessor2();
+            break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
         }

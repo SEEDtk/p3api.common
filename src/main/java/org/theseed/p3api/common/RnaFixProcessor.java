@@ -4,26 +4,23 @@
 package org.theseed.p3api.common;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.samples.SampleId;
-import org.theseed.utils.BaseProcessor;
+import org.theseed.utils.BasePipeProcessor;
 import org.theseed.utils.ParseFailureException;
 
 /**
- * This command sets up to fix RNA Seq file names for the threonine project.  It takes as input a directory
- * of processed RNA Seq data files and a strain re-assignment file.  It will copy the data files to an output
- * directory with the strain names corrected.
+ * This command sets up to fix RNA Seq sample names for the threonine project.  It takes as input a file containing
+ * the sample names in the first column and a strain re-assignment file.  It will output a new version of the file
+ * with the strain names corrected.
  *
  * The strain reassignments are always a change in host.  Each reassignment entry has an old-name chromosome definition,
  * the old host, and the new host.  "926" is "M" and "277" is "7".  "nrrl XXXXX" hosts are converted to simply "XXXXX".
@@ -31,72 +28,44 @@ import org.theseed.utils.ParseFailureException;
  * the new host.  If an incoming file name's sample ID matches at the chromosome level, we copy the file, renaming it if
  * the host has changed.
  *
- * The positional parameters are the name of the input directory, the name of the renaming file, and the name of the
- * output directory.
+ * The positional parameter is the name of the renaming file.
  *
  * The command-line options are as follows.
  *
  * -h	display command-line usage
  * -v	display more frequent log messages
- *
- * --clear	erase output directory before processing
+ * -i	input file (if not STDIN)
+ * -o	output file (if not STDOUT)
  *
  * @author Bruce Parrello
  *
  */
-public class RnaFixProcessor extends BaseProcessor {
+public class RnaFixProcessor extends BasePipeProcessor {
 
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(RnaFixProcessor.class);
-    /** match patter for file names */
-    protected static final Pattern RNA_FILE_NAME = Pattern.compile("(.+)(\\.samstat\\.html|_genes\\.fpkm)");
 
     // COMMAND-LINE OPTIONS
 
-    /** TRUE to clear the output directory before beginning */
-    @Option(name = "--clear", usage = "if specified, the output directory will be erased before processing")
-    private boolean clearFlag;
-
-    /** name of the input directory */
-    @Argument(index = 0, metaVar = "inDir", usage = "input directory name")
-    private File inDir;
-
     /** name of the renaming definition file */
-    @Argument(index = 1, metaVar = "new_strains.txt", usage = "renaming definition file")
+    @Argument(index = 0, metaVar = "new_strains.txt", usage = "renaming definition file", required = true)
     private File translationFile;
 
-    /** name of the output directory */
-    @Argument(index = 2, metaVar = "outDir", usage = "output directory name")
-    private File outDir;
-
     @Override
-    protected void setDefaults() {
-        this.clearFlag = false;
+    protected void setPipeDefaults() {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
-        // Insure the input directory exists.
-        if (! this.inDir.isDirectory())
-            throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
-        // Insure we can read the translation file.
-        if (! this.translationFile.canRead())
-            throw new FileNotFoundException("Translation file " + this.translationFile + " is not found or unreadable.");
-        // Prepare the output directory.
-        if (! this.outDir.isDirectory()) {
-            log.info("Creating output directory {}.", this.outDir);
-            FileUtils.forceMkdir(this.outDir);
-        } else if (this.clearFlag) {
-            log.info("Erasing output directory {}.", this.outDir);
-            FileUtils.cleanDirectory(this.outDir);
-        } else
-            log.info("Output will be to directory {}.", this.outDir);
-        return true;
+    protected void validatePipeInput(TabbedLineReader inputStream) throws IOException {
     }
 
     @Override
-    protected void runCommand() throws Exception {
+    protected void validatePipeParms() throws IOException, ParseFailureException {
+    }
+
+    @Override
+    protected void runPipeline(TabbedLineReader inputStream, PrintWriter writer) throws Exception {
         // First, read in the translations.  The map translates a chromosome string to a new host name.  A host name
         // of "?" means the chromosome's samples should be discarded.
         log.info("Loading translation map from {}.", this.translationFile);
@@ -123,34 +92,25 @@ public class RnaFixProcessor extends BaseProcessor {
             }
         }
         log.info("{} mappings found.", translationMap.size());
-        // Now loop through the input directory.
-        File[] inFiles = this.inDir.listFiles(File::isFile);
-        for (File inFile : inFiles) {
-            Matcher m = RNA_FILE_NAME.matcher(inFile.getName());
-            if (m.matches()) {
-                String sampleId = m.group(1);
-                // If this is an NCBI sample, copy it unmodified.
-                File outFile;
-                if (! sampleId.contains("_"))
-                    outFile = new File(this.outDir, inFile.getName());
-                else {
-                    SampleId sample = new SampleId(m.group(1));
-                    // Compute the new sample name.
-                    String chrome = sample.toChromosome();
-                    String target = translationMap.getOrDefault(chrome, "?");
-                    if (! target.contentEquals("?")) {
-                        String newName = sample.replaceFragment(SampleId.STRAIN_COL, target);
-                        outFile = new File(this.outDir, newName + m.group(2));
-                    } else {
-                        outFile = null;
-                    }
-                }
-                if (outFile != null) {
-                    FileUtils.copyFile(inFile, outFile);
-                    log.info("{} copied to {}.", inFile, outFile);
-                }
+        // Next, we process the input file and produce the output file.
+        int count = 0;
+        int kept = 0;
+        log.info("Processing input lines.");
+        for (var line : inputStream) {
+            String[] fields = line.getFields();
+            count++;
+            // Determine the new value for the sample ID.
+            SampleId sample = new SampleId(fields[0]).normalizeSets();
+            String chrome = sample.toChromosome();
+            String target = translationMap.getOrDefault(chrome, "?");
+            if (! target.contentEquals("?")) {
+                kept++;
+                fields[0] = sample.replaceFragment(0, target);
+                writer.println(StringUtils.join(fields, '\t'));
             }
         }
+        log.info("{} lines read, {} output.", count, kept);
     }
 
+    // TODO constructors and methods for RnaFixProcessor
 }
