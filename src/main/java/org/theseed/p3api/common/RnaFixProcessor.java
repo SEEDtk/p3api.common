@@ -112,5 +112,4 @@ public class RnaFixProcessor extends BasePipeProcessor {
         log.info("{} lines read, {} output.", count, kept);
     }
 
-    // TODO constructors and methods for RnaFixProcessor
 }

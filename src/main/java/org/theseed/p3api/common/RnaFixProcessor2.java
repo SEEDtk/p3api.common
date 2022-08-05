@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
@@ -22,16 +23,14 @@ import org.theseed.utils.ParseFailureException;
 
 /**
  * This command sets up to fix RNA Seq file names for the threonine project.  It takes as input a directory
- * of processed RNA Seq data files and a strain re-assignment file.  It will copy the data files to an output
+ * of processed RNA Seq data files and a mapping file.  It will copy the data files to an output
  * directory with the strain names corrected.
  *
- * The strain reassignments are always a change in host.  Each reassignment entry has an old-name chromosome definition,
- * the old host, and the new host.  "926" is "M" and "277" is "7".  "nrrl XXXXX" hosts are converted to simply "XXXXX".
- * The basic strategy is to convert each reassignment chromosome to a sample ID and map the old chromosome string to
- * the new host.  If an incoming file name's sample ID matches at the chromosome level, we copy the file, renaming it if
- * the host has changed.
+ * The strain reassignments are almost always a change in host.  If an input file is not in the strain-reassignment list,
+ * it is copied unmodified.  If it is in the list and the strain column is blank, it is not copied.  Otherwise, the
+ * strain is checked for a change of host, and the IPTG column is checked for an IPTG error.
  *
- * The positional parameters are the name of the input directory, the name of the renaming file, and the name of the
+ * The positional parameters are the name of the input directory, the name of the mapping file, and the name of the
  * output directory.
  *
  * The command-line options are as follows.
@@ -40,7 +39,6 @@ import org.theseed.utils.ParseFailureException;
  * -v	display more frequent log messages
  *
  * --clear	erase output directory before processing
- * --iptg	force IPTG on in output directory
  *
  * @author Bruce Parrello
  *
@@ -59,16 +57,12 @@ public class RnaFixProcessor2 extends BaseProcessor {
     @Option(name = "--clear", usage = "if specified, the output directory will be erased before processing")
     private boolean clearFlag;
 
-    /** TRUE to force IPTG on in the output directory */
-    @Option(name = "--iptg", usage = "if specified, IPTG will be forced on in the output directory")
-    private boolean iptgFlag;
-
     /** name of the input directory */
     @Argument(index = 0, metaVar = "inDir", usage = "input directory name")
     private File inDir;
 
     /** name of the renaming definition file */
-    @Argument(index = 1, metaVar = "new_strains.txt", usage = "renaming definition file")
+    @Argument(index = 1, metaVar = "mapping.tbl", usage = "mapping definition file")
     private File translationFile;
 
     /** name of the output directory */
@@ -78,7 +72,6 @@ public class RnaFixProcessor2 extends BaseProcessor {
     @Override
     protected void setDefaults() {
         this.clearFlag = false;
-        this.iptgFlag = false;
     }
 
     @Override
@@ -103,29 +96,34 @@ public class RnaFixProcessor2 extends BaseProcessor {
 
     @Override
     protected void runCommand() throws Exception {
-        // First, read in the translations.  The map translates a chromosome string to a new host name.  A host name
-        // of "?" means the chromosome's samples should be discarded.
+        // First, read in the translations.  For each one, we either map to an empty string or to the updated sample ID.
+        // Sample IDs that don't change are discarded.
         log.info("Loading translation map from {}.", this.translationFile);
         var translationMap = new HashMap<String, String>(500);
         try (var tranStream = new TabbedLineReader(this.translationFile)) {
             for (var line : tranStream) {
-                // We need to convert hyphens to "x" in the chromosome definition because of an old amibiguity problem.
-                String chromeDef = line.get(0).replace('-', 'x');
-                // Create a sample ID from the chromosome definition.
-                SampleId sample = SampleId.translate(chromeDef, 24.0, true, "M1").normalizeSets();
-                String chromosome = sample.toChromosome();
-                // Translate the target host.
-                var target = line.get(2);
-                if (target.startsWith("nrrl "))
-                    target = target.substring(5);
-                else if (target.contentEquals("277"))
-                    target = "7";
-                else if (target.startsWith("?"))
-                    target = "?";
-                else
-                    target = "M";
-                // Store the mapping.
-                translationMap.put(chromosome, target);
+                var oldSampleId = line.get(0);
+                var strainId = line.get(1);
+                if (strainId.isBlank())
+                    translationMap.put(oldSampleId, "");
+                else {
+                    boolean keep = false;
+                    var sample = new SampleId(oldSampleId);
+                    // Update the IPTG.
+                    if (! sample.isIPTG() && line.getFlag(2)) {
+                        sample.setIptg();
+                        keep = true;
+                    }
+                    // Update the strain.
+                    String newHost = StringUtils.substringBefore(strainId, "_");
+                    if (! newHost.contentEquals(sample.getFragment(0))) {
+                        String newSampleId = sample.replaceFragment(0, newHost);
+                        sample = new SampleId(newSampleId);
+                        keep = true;
+                    }
+                    if (keep)
+                        translationMap.put(oldSampleId, sample.toString());
+                }
             }
         }
         log.info("{} mappings found.", translationMap.size());
@@ -134,24 +132,20 @@ public class RnaFixProcessor2 extends BaseProcessor {
         for (File inFile : inFiles) {
             Matcher m = RNA_FILE_NAME.matcher(inFile.getName());
             if (m.matches()) {
-                String sampleId = m.group(1);
-                // If this is an NCBI sample, copy it unmodified.
+                // Get the mapping information.
                 File outFile;
-                if (! sampleId.contains("_"))
+                String oldSampleId = m.group(1);
+                String newSampleId = translationMap.get(oldSampleId);
+                if (newSampleId == null) {
+                    // Here we copy the file unchanged.
                     outFile = new File(this.outDir, inFile.getName());
-                else {
-                    SampleId sample = new SampleId(m.group(1));
-                    if (this.iptgFlag)
-                        sample.setIptg();
-                    // Compute the new sample name.
-                    String chrome = sample.toChromosome();
-                    String target = translationMap.getOrDefault(chrome, "?");
-                    if (! target.contentEquals("?")) {
-                        String newName = sample.replaceFragment(SampleId.STRAIN_COL, target);
-                        outFile = new File(this.outDir, newName + m.group(2));
-                    } else {
-                        outFile = null;
-                    }
+                } else if (StringUtils.isEmpty(newSampleId)) {
+                    // Here the file is bad and is not copied.
+                    outFile = null;
+                    log.info("Skipping bad sample {}.", oldSampleId);
+                } else {
+                    // Here we need an updated filename.
+                    outFile = new File(this.outDir, newSampleId + m.group(2));
                 }
                 if (outFile != null) {
                     FileUtils.copyFile(inFile, outFile);
@@ -160,5 +154,4 @@ public class RnaFixProcessor2 extends BaseProcessor {
             }
         }
     }
-
 }

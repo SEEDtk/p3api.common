@@ -25,7 +25,9 @@ import org.theseed.utils.BaseProcessor;
  * hammerX		analyze the fake-fasta hammer test
  * zipCheck		validate a master directory with the ZipException bug
  * essential	determine which features in a list are essential
- * rnaFix		fix up RNA Seq file names
+ * rnaFix2		fix up RNA Seq file names
+ * unfixed		find unfixed chromosomes
+ * rnaRestrain	build RNA Seq strain fixup data file
  *
  */
 public class App
@@ -94,8 +96,14 @@ public class App
         case "rnaFix" :
             processor = new RnaFixProcessor();
             break;
+        case "fixConvert" :
+            processor = new FixConvertProcessor();
+            break;
         case "rnaFix2" :
-            processor = new RnaFixProcessor2();
+        	processor = new RnaFixProcessor2();
+        	break;
+        case "rnaRestrain" :
+            processor = new ReStrainMapProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
