@@ -108,7 +108,7 @@ public class RnaFixProcessor2 extends BaseProcessor {
                     translationMap.put(oldSampleId, "");
                 else {
                     boolean keep = false;
-                    var sample = new SampleId(oldSampleId);
+                    var sample = (new SampleId(oldSampleId)).normalizeSets();
                     // Update the IPTG.
                     if (! sample.isIPTG() && line.getFlag(2)) {
                         sample.setIptg();
@@ -129,29 +129,51 @@ public class RnaFixProcessor2 extends BaseProcessor {
         log.info("{} mappings found.", translationMap.size());
         // Now loop through the input directory.
         File[] inFiles = this.inDir.listFiles(File::isFile);
+        int skipCount = 0;
+        int keepCount = 0;
+        int changeCount = 0;
+        int copyCount = 0;
         for (File inFile : inFiles) {
             Matcher m = RNA_FILE_NAME.matcher(inFile.getName());
             if (m.matches()) {
                 // Get the mapping information.
-                File outFile;
                 String oldSampleId = m.group(1);
-                String newSampleId = translationMap.get(oldSampleId);
-                if (newSampleId == null) {
-                    // Here we copy the file unchanged.
-                    outFile = new File(this.outDir, inFile.getName());
-                } else if (StringUtils.isEmpty(newSampleId)) {
-                    // Here the file is bad and is not copied.
-                    outFile = null;
-                    log.info("Skipping bad sample {}.", oldSampleId);
+                if (oldSampleId.contentEquals("M_0_TA1_C_asdO_000_DtdhDmetlDdapA_0_24_M1"))
+                    log.info("Check.");
+                String newName;
+                if (! oldSampleId.contains("_")) {
+                    // NCBI samples are processed without changes.
+                    newName = oldSampleId;
+                    keepCount++;
                 } else {
-                    // Here we need an updated filename.
-                    outFile = new File(this.outDir, newSampleId + m.group(2));
+                    SampleId sample = (new SampleId(oldSampleId)).normalizeSets();
+                    String newSampleId = translationMap.get(sample.toString());
+                    if (newSampleId != null) {
+                        // Here we need to update the sample ID.copy the file unchanged.
+                        if (StringUtils.isEmpty(newSampleId)) {
+                            // Here the file is bad and is not copied.
+                            sample = null;
+                            skipCount++;
+                        } else {
+                            sample = new SampleId(newSampleId);
+                            changeCount++;
+                        }
+                    } else
+                        keepCount++;
+                    // If the sample is invalid, denote there is no new name; otherwise, normalize the name.
+                    if (sample == null)
+                        newName = null;
+                    else
+                        newName = sample.normalizeSets().toString();
                 }
-                if (outFile != null) {
+                if (newName != null) {
+                    File outFile = new File(this.outDir, newName + m.group(2));
                     FileUtils.copyFile(inFile, outFile);
                     log.info("{} copied to {}.", inFile, outFile);
-                }
+                } else
+                    log.info("{} skipped.  No mapping.", inFile);
             }
         }
+        log.info("{} copied.  {} unchanged, {} skipped, {} modified.", copyCount, keepCount, skipCount, changeCount);
     }
 }
