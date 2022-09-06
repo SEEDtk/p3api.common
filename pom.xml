@@ -4,7 +4,7 @@
 
   <groupId>org.theseed</groupId>
   <artifactId>p3api.common</artifactId>
-  <version>0.0.1</version>
+  <version>1.0.0</version>
 
   <name>p3api.common</name>
   <description>Useful PATRIC Data Tasks</description>
@@ -42,7 +42,7 @@
     <dependency>
         <groupId>org.theseed</groupId>
         <artifactId>p3api</artifactId>
-        <version>0.0.1</version>
+        <version>1.0.0</version>
     </dependency>
     <dependency>
         <groupId>commons-io</groupId>
