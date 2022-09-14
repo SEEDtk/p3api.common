@@ -4,6 +4,7 @@
 package org.theseed.p3api.common;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.List;
 
 import org.kohsuke.args4j.Argument;
@@ -38,6 +39,8 @@ public class SimpleProcessor extends BaseProcessor {
 
     @Override
     protected void runCommand() throws Exception {
+        InetAddress host = InetAddress.getLocalHost();
+        log.info("Test was run on {} at address {}.", host.getHostName(), host.getCanonicalHostName());
         for (String parm : parms)
             log.info("Parm is \"{}\".", parm);
     }
