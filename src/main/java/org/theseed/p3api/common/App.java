@@ -28,6 +28,7 @@ import org.theseed.utils.BaseProcessor;
  * rnaFix2		fix up RNA Seq file names
  * unfixed		find unfixed chromosomes
  * rnaRestrain	build RNA Seq strain fixup data file
+ * ssuFix		fix bad SSUs in the PATRIC master directory
  *
  */
 public class App
@@ -100,10 +101,13 @@ public class App
             processor = new FixConvertProcessor();
             break;
         case "rnaFix2" :
-        	processor = new RnaFixProcessor2();
-        	break;
+            processor = new RnaFixProcessor2();
+            break;
         case "rnaRestrain" :
             processor = new ReStrainMapProcessor();
+            break;
+        case "ssuFix" :
+            processor = new SsuFixProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
