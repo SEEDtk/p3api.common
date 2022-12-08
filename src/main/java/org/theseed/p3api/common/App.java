@@ -22,7 +22,7 @@ import org.theseed.utils.BaseProcessor;
  * dnaDist		compute a the maximum distance between DNA FASTA sequences
  * bFinder		return the b-numbers for a send of gene names
  * binCheck		remove bad genomes from a binning reference genome FASTA
- * hammerX		analyze the fake-fasta hammer test
+ * hammerX		verify genome PheS characteristics
  * zipCheck		validate a master directory with the ZipException bug
  * essential	determine which features in a list are essential
  * rnaFix2		fix up RNA Seq file names
