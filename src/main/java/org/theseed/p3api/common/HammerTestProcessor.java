@@ -6,168 +6,149 @@ package org.theseed.p3api.common;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.genome.Feature;
-import org.theseed.genome.Genome;
-import org.theseed.proteins.DnaTranslator;
-import org.theseed.proteins.Role;
-import org.theseed.proteins.RoleMap;
-import org.theseed.sequence.ProteinKmers;
-import org.theseed.sequence.RnaKmers;
-import org.theseed.utils.BaseProcessor;
+import org.theseed.io.TabbedLineReader;
+import org.theseed.utils.BasePipeProcessor;
 import org.theseed.utils.ParseFailureException;
+import org.theseed.utils.StringPair;
 
 /**
- * This command compares feature distances for two genomes.  It outputs the similarity between the protein sequences, the similarity
- * between the DNA sequences, and the similarity between the translated DNA sequence and the protein translation.
+ * This command reads the misses file and checks the distances between the genomes.  If the ANI distance between
+ * the actual genome and the test genome is less than or equal to the distance between the expected genome and the
+ * test genome, the miss is considered a good hit.  The incoming report is augmented with extra columns showing the
+ * distances and whether the miss is acceptable or a genuine error.
  *
- * The positional parameters are the names of the GTO files.
+ * The standard input should contain the "--misses" output from "ContigTestAnalysisProcessor".  The positional
+ * parameter is the name of a file containing the computed distances.  The augmented misses file will be written
+ * to the standard output.
  *
- * Output is to the log.
+ * In the distance file, the genome IDs should be in columns named "id1" and "id2".  The distance will be taken
+ * from a column identified by a command-line option.
  *
  * The command-line options are as follows.
  *
  * -h	display command-line usage
  * -v	display more frequent log messages
+ * -i	input file (if not STDIN)
+ * -o	output file (if not STDOUT)
  *
- * --roles	the name of the role definition file for the roles to process (default "roles.for.hammers" in the current directory)
+ * --type	type of distance to use (default ANI_chunk1020.I30,M>35)
  *
  * @author Bruce Parrello
  *
  */
-public class HammerTestProcessor extends BaseProcessor {
+public class HammerTestProcessor extends BasePipeProcessor {
 
     // FIELDS
     /** logging facility */
     protected static Logger log = LoggerFactory.getLogger(HammerTestProcessor.class);
-    /** first genome */
-    private Genome genome1;
-    /** second genome */
-    private Genome genome2;
-    /** definitions for roles of interest */
-    private RoleMap roleMap;
-    /** DNA translator for genome 1 */
-    private DnaTranslator xlate1;
-    /** DNA translator for genome 2 */
-    private DnaTranslator xlate2;
+    /** map of genome ID pairs to distances */
+    private Map<StringPair, Double> distanceMap;
+    /** index of the test genome ID column */
+    private int testGenomeIdx;
+    /** index of the found genome ID column */
+    private int foundGenomeIdx;
+    /** index of the expected genome ID column */
+    private int repGenomeIdx;
 
     // COMMAND-LINE OPTIONS
 
-    /** name of the role definition file */
-    @Option(name = "--roles", metaVar = "sours.definition", usage = "role definition file")
-    private File roleFile;
+    /** index (1-based) or name of column containing  distance to use */
+    @Option(name = "--type", metaVar = "Genes_K20:PhenTrnaSyntAlph", usage = "index (1-based) or name of distance input column")
+    private String distanceCol;
 
-    /** name of the first genome GTO */
-    @Argument(index = 0, metaVar = "g1.gto", usage = "name of the first GTO file")
-    private File gto1File;
-
-    /** name of the second geome GTO */
-    @Argument(index = 1, metaVar = "g2.gto", usage = "name of the second GTO file")
-    private File gto2File;
+    /** name of the distances file */
+    @Argument(index = 0, metaVar = "distances.tbl", usage = "name of the file containing the distances")
+    private File distFile;
 
     @Override
-    protected void setDefaults() {
-        this.roleFile = new File(System.getProperty("user.dir"), "roles.for.hammers");
+    protected void setPipeDefaults() {
+        this.distanceCol = "ANI_chunk1020.I30,M>35";
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
-        if (! this.gto1File.canRead())
-            throw new FileNotFoundException("GTO file " + this.gto1File + " is not found or unreadable.");
-        if (! this.gto2File.canRead())
-            throw new FileNotFoundException("GTO file " + this.gto1File + " is not found or unreadable.");
-        this.genome1 = new Genome(this.gto1File);
-        this.xlate1 = new DnaTranslator(this.genome1.getGeneticCode());
-        this.genome2 = new Genome(this.gto2File);
-        this.xlate2 = new DnaTranslator(this.genome2.getGeneticCode());
-        if (! this.roleFile.canRead())
-            throw new FileNotFoundException("Role file " + this.roleFile + " is not found or unreadable.");
-        this.roleMap = RoleMap.load(this.roleFile);
-        log.info("{} roles will be analyzed.", this.roleMap.size());
-        return true;
+    protected void validatePipeInput(TabbedLineReader inputStream) throws IOException {
+        // Get the useful columns.
+        this.foundGenomeIdx = inputStream.findField("actual");
+        this.repGenomeIdx = inputStream.findField("expected");
+        this.testGenomeIdx = inputStream.findField("genome_id");
     }
 
     @Override
-    protected void runCommand() throws Exception {
-        // Get each genome's roles.
-        Map<String, List<Feature>> role1Map = this.getFeatures(this.genome1);
-        Map<String, List<Feature>> role2Map = this.getFeatures(this.genome2);
-        // Compare the roles.
-        for (var role1Entry : role1Map.entrySet()) {
-            String role = role1Entry.getKey();
-            List<Feature> feats1 = role1Entry.getValue();
-            List<Feature> feats2 = role2Map.get(role);
-            // First, protein distance.  Get protein kmer lists for each genome.
-            List<ProteinKmers> prots1 = feats1.stream().map(x -> new ProteinKmers(x.getProteinTranslation(), 8)).collect(Collectors.toList());
-            List<ProteinKmers> prots2 = feats2.stream().map(x -> new ProteinKmers(x.getProteinTranslation(), 8)).collect(Collectors.toList());
-            int bestSim = 0;
-            for (ProteinKmers prot1 : prots1) {
-                for (ProteinKmers prot2 : prots2) {
-                    int sim = prot1.similarity(prot2);
-                    if (sim > bestSim) bestSim = sim;
-                }
+    protected void validatePipeParms() throws IOException, ParseFailureException {
+        // Verify the distance file and load the distances.
+        if (! this.distFile.canRead())
+            throw new FileNotFoundException("Distance file " + this.distFile + " is not found or unreadable.");
+        try (TabbedLineReader distStream = new TabbedLineReader(this.distFile)) {
+            log.info("Reading distances from {}.", this.distFile);
+            // Locate the genome ID columns.
+            int id1ColIdx = distStream.findField("id1");
+            int id2ColIdx = distStream.findField("id2");
+            // Locate the distance column.
+            int distColIdx = distStream.findField(this.distanceCol);
+            // Create the distance map.
+            this.distanceMap = new HashMap<StringPair, Double>(2000);
+            // Fill it from the distance file.
+            for (var line : distStream) {
+                StringPair genomes = new StringPair(line.get(id1ColIdx), line.get(id2ColIdx));
+                double distance = line.getDouble(distColIdx);
+                this.distanceMap.put(genomes, distance);
             }
-            log.info("Protein similarity for {} is {}.", role, bestSim);
-            // Now, DNA distance.  Create RNA kmers for each genome.
-            RnaKmers dna1 = new RnaKmers(20);
-            feats1.stream().forEach(x -> dna1.addSequence(x.getDna()));
-            RnaKmers dna2 = new RnaKmers(20);
-            feats2.stream().forEach(x -> dna2.addSequence(x.getDna()));
-            log.info("Dna similarity for {} is {}.", role, dna1.similarity(dna2));
-            // Now validate each feature.
-            feats1.stream().forEach(x -> this.validateFeature(x, xlate1));
-            feats2.stream().forEach(x -> this.validateFeature(x, xlate2));
+            log.info("{} distances loaded from {}.", this.distanceMap.size(), this.distFile);
         }
+    }
 
+    @Override
+    protected void runPipeline(TabbedLineReader inputStream, PrintWriter writer) throws Exception {
+        // Write the output header.
+        writer.println(inputStream.header() + "\ttest_to_actual\ttest_to_rep\tgood_hit");
+        // Loop through the input file, comparing distances.
+        int goodCount = 0;
+        int badCount = 0;
+        for (var line : inputStream) {
+            // Compute the test-to-actual distance.
+            String testGenome = line.get(testGenomeIdx);
+            String actualGenome = line.get(foundGenomeIdx);
+            double testToActual = this.getDistance(testGenome, actualGenome);
+            // Compute the test-to-expected distance.
+            String expectedGenome = line.get(repGenomeIdx);
+            double testToExpected = this.getDistance(testGenome, expectedGenome);
+            // Compare the distances.
+            String goodFlag;
+            if (testToActual <= testToExpected) {
+                goodFlag = "Y";
+                goodCount++;
+            } else {
+                goodFlag = "";
+                badCount++;
+            }
+            writer.println(line.getAll() + String.format("\t%6.4f\t%6.4f\t%s", testToActual, testToExpected, goodFlag));
+        }
+        log.info("{} good misses, {} bad misses.", goodCount, badCount);
     }
 
     /**
-     * Validate the protein translation in the specified feature.
+     * Get the distance between the two genomes.
      *
-     * @param feat		feature to validate
-     * @param xlate		DNA translator to use
+     * @param g1	ID of the first genome
+     * @param g2	ID of the second genome
+     *
+     * @return the distance from the distance file, or 2.0 if the distance is missing
      */
-    private void validateFeature(Feature feat, DnaTranslator xlate) {
-        String dna = feat.getDna();
-        String translated = xlate.pegTranslate(dna);
-        String prot = feat.getProteinTranslation();
-        // Remove the stop codon on the translation.
-        translated = StringUtils.removeEnd(translated, "*");
-        if (! prot.contentEquals(translated)) {
-            ProteinKmers protK = new ProteinKmers(prot, 8);
-            ProteinKmers translateK = new ProteinKmers(translated, 8);
-            int sim = protK.similarity(translateK);
-            log.warn("Protein mismatch for {}:  similarity = {}.", feat.getId(), sim);
-        }
-    }
-
-    /**
-     * Locate the features for each role in the role map.
-     *
-     * @param genome	genome containing the features
-     *
-     * @return a map from role IDs to feature lists
-     */
-    private Map<String, List<Feature>> getFeatures(Genome genome) {
-        var retVal = new HashMap<String, List<Feature>>(this.roleMap.size() * 4 / 3 + 1);
-        for (Feature peg : genome.getPegs()) {
-            var roles = peg.getUsefulRoles(this.roleMap);
-            for (Role role : roles) {
-                List<Feature> featList = retVal.computeIfAbsent(role.getId(), x -> new ArrayList<Feature>(5));
-                featList.add(peg);
-            }
-        }
+    private double getDistance(String g1, String g2) {
+        StringPair pair = new StringPair(g1, g2);
+        double retVal = this.distanceMap.getOrDefault(pair, 2.0);
+        if (retVal == 2.0)
+            log.warn("Missing distance between {} and {}.", g1, g2);
         return retVal;
     }
 
+    // TODO constructors and methods for HammerTestProcessor
 }
