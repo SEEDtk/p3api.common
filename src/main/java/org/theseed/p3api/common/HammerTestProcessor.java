@@ -150,5 +150,4 @@ public class HammerTestProcessor extends BasePipeProcessor {
         return retVal;
     }
 
-    // TODO constructors and methods for HammerTestProcessor
 }
