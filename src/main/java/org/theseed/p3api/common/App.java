@@ -29,6 +29,7 @@ import org.theseed.utils.BaseProcessor;
  * unfixed		find unfixed chromosomes
  * rnaRestrain	build RNA Seq strain fixup data file
  * ssuFix		fix bad SSUs in the PATRIC master directory
+ * qualCheck	compute the mean quality of a Fastq directory sample group
  *
  */
 public class App
@@ -108,6 +109,9 @@ public class App
             break;
         case "ssuFix" :
             processor = new SsuFixProcessor();
+            break;
+        case "qualCheck" :
+            processor = new QualCheckProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
