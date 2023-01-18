@@ -30,6 +30,7 @@ import org.theseed.utils.BaseProcessor;
  * rnaRestrain	build RNA Seq strain fixup data file
  * ssuFix		fix bad SSUs in the PATRIC master directory
  * qualCheck	compute the mean quality of a Fastq directory sample group
+ * fastaG		update a genome from a FASTA file
  *
  */
 public class App
@@ -112,6 +113,9 @@ public class App
             break;
         case "qualCheck" :
             processor = new QualCheckProcessor();
+            break;
+        case "fastaG" :
+            processor = new FastaGenomeProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
