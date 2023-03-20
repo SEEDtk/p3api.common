@@ -31,6 +31,7 @@ import org.theseed.utils.BaseProcessor;
  * ssuFix		fix bad SSUs in the PATRIC master directory
  * qualCheck	compute the mean quality of a Fastq directory sample group
  * fastaG		update a genome from a FASTA file
+ * hammerFix	convert hammer strengths to neighborhood-based
  *
  */
 public class App
@@ -116,6 +117,9 @@ public class App
             break;
         case "fastaG" :
             processor = new FastaGenomeProcessor();
+            break;
+        case "hammerFix" :
+            processor = new HammerFixProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
