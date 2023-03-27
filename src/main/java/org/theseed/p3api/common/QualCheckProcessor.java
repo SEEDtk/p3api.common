@@ -64,7 +64,7 @@ public class QualCheckProcessor extends BaseProcessor {
     @Override
     protected void runCommand() throws Exception {
         try (FastqSampleGroup sampleGroup = this.groupType.create(this.inDir)) {
-            Set<String> samples = sampleGroup.getSamples();
+            Set<String> samples = sampleGroup.getSampleIDs();
             log.info("{} samples found in {}.", samples.size(), this.inDir);
             int seqCount = 0;
             double totalQual = 0.0;
