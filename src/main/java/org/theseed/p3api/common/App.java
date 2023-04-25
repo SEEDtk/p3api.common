@@ -32,6 +32,7 @@ import org.theseed.utils.BaseProcessor;
  * qualCheck	compute the mean quality of a Fastq directory sample group
  * fastaG		update a genome from a FASTA file
  * hammerFix	convert hammer strengths to neighborhood-based
+ * groupTest	generate a test dataset for the RNA Seq group file formatter
  *
  */
 public class App
@@ -120,6 +121,9 @@ public class App
             break;
         case "hammerFix" :
             processor = new HammerFixProcessor();
+            break;
+        case "groupTest" :
+            processor = new GroupTestProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
