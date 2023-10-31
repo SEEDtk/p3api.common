@@ -33,6 +33,7 @@ import org.theseed.utils.BaseProcessor;
  * fastaG		update a genome from a FASTA file
  * hammerFix	convert hammer strengths to neighborhood-based
  * groupTest	generate a test dataset for the RNA Seq group file formatter
+ * hammerComp	compare hammer counts to distances
  *
  */
 public class App
@@ -124,6 +125,9 @@ public class App
             break;
         case "groupTest" :
             processor = new GroupTestProcessor();
+            break;
+        case "hammerComp" :
+            processor = new HammerCompareProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
