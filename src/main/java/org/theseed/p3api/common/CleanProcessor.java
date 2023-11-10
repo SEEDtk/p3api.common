@@ -15,10 +15,10 @@ import java.util.Set;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.GenomeMultiDirectory;
 import org.theseed.p3api.P3Connection;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 

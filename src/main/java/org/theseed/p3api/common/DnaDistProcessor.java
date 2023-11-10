@@ -12,11 +12,11 @@ import java.io.IOException;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.sequence.DnaKmers;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This is a simple command that reads a DNA FASTA file and computes the distances between

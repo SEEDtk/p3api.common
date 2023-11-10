@@ -2,7 +2,7 @@ package org.theseed.p3api.common;
 
 import java.util.Arrays;
 
-import org.theseed.utils.BaseProcessor;
+import org.theseed.basic.BaseProcessor;
 
 /**
  * This application performs various useful PATRIC API tasks.

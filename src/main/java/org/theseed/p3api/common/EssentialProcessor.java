@@ -13,12 +13,12 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.Criterion;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.utils.BasePipeProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command runs through a list of feature IDs in PATRIC and interrogates the

@@ -14,10 +14,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Option;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
-import org.theseed.utils.BaseProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 

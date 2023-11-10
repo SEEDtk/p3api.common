@@ -10,7 +10,7 @@ import java.util.List;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.theseed.utils.BaseProcessor;
+import org.theseed.basic.BaseProcessor;
 
 /**
  * This is a simple command that echoes its parameters, to provide a quick test of calling into Java from PERL.

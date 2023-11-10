@@ -11,11 +11,11 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeMultiDirectory;
 import org.theseed.genome.iterator.GenomeSource;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * Copy a set of genomes to a genome master directory.  Note that if the input is PATRIC, the output directory will

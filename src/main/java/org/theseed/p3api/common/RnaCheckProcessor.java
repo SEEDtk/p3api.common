@@ -13,17 +13,18 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.iterator.GenomeSource;
 import org.theseed.reports.RnaCheckReporter;
+import org.theseed.roles.RoleUtilities;
 import org.theseed.sequence.BatchStreamIterator;
 import org.theseed.sequence.DnaDataStream;
 import org.theseed.sequence.blast.BlastHit;
 import org.theseed.sequence.blast.BlastParms;
 import org.theseed.sequence.blast.DnaBlastDB;
 import org.theseed.utils.BaseReportProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This command checks the SSU rRNA sequences in the genomes from an input source.  First, the annotated 16s features are
@@ -200,7 +201,7 @@ public class RnaCheckProcessor extends BaseReportProcessor {
     private int searchForAnnotatedRna(Genome genome) {
         int retVal = 0;
         for (Feature feat : genome.getFeatures()) {
-            if (feat.getType().contentEquals("rna") && Genome.SSU_R_RNA.matcher(feat.getPegFunction()).find()) {
+            if (feat.getType().contentEquals("rna") && RoleUtilities.SSU_R_RNA.matcher(feat.getPegFunction()).find()) {
                 RnaDescriptor descriptor = new RnaDescriptor(genome, feat);
                 this.reporter.recordHit(descriptor);
                 retVal++;

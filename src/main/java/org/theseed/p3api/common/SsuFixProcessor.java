@@ -11,12 +11,12 @@ import java.time.Duration;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeMultiDirectory;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Genome;
-import org.theseed.utils.BaseProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This is a simple utility script that fixes bad SSU rRNAs in the PATRIC master genome directory.  Each genome is

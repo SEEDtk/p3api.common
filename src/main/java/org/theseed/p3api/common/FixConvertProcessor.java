@@ -9,10 +9,10 @@ import java.io.PrintWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.samples.SampleId;
 import org.theseed.utils.BasePipeProcessor;
-import org.theseed.utils.ParseFailureException;
 
 /**
  * This is a quick and dirty command that converts the master RNA Seq file produced by "RnaFixProcessor" to

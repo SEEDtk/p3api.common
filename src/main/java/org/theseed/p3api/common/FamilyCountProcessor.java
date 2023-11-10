@@ -10,11 +10,11 @@ import java.io.IOException;
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
-import org.theseed.utils.BaseProcessor;
 
 /**
  * This command counts the protein families in the genomes of a genome directory.  The output

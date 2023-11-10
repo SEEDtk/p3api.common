@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.kohsuke.args4j.Argument;
+import org.theseed.basic.BaseProcessor;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
@@ -19,7 +20,6 @@ import org.theseed.p3api.P3Connection.Table;
 import org.theseed.proteins.Role;
 import org.theseed.subsystems.SubsystemProjector;
 import org.theseed.subsystems.SubsystemSpec;
-import org.theseed.utils.BaseProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
