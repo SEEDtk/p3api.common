@@ -34,6 +34,7 @@ import org.theseed.basic.BaseProcessor;
  * hammerFix	convert hammer strengths to neighborhood-based
  * groupTest	generate a test dataset for the RNA Seq group file formatter
  * hammerComp	compare hammer counts to distances
+ * md5Check		check a genome dump directory for MD5s in a protein list
  *
  */
 public class App
@@ -128,6 +129,9 @@ public class App
             break;
         case "hammerComp" :
             processor = new HammerCompareProcessor();
+            break;
+        case "md5Check" :
+            processor = new Md5CheckProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
