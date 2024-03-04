@@ -35,6 +35,7 @@ import org.theseed.basic.BaseProcessor;
  * groupTest	generate a test dataset for the RNA Seq group file formatter
  * hammerComp	compare hammer counts to distances
  * md5Check		check a genome dump directory for MD5s in a protein list
+ * vsynth		create synthetic viruses from other viruses in a FASTA
  *
  */
 public class App
@@ -132,6 +133,9 @@ public class App
             break;
         case "md5Check" :
             processor = new Md5CheckProcessor();
+            break;
+        case "vsynth" :
+            processor = new VSynthProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
