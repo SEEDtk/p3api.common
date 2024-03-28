@@ -36,6 +36,7 @@ import org.theseed.basic.BaseProcessor;
  * hammerComp	compare hammer counts to distances
  * md5Check		check a genome dump directory for MD5s in a protein list
  * vsynth		create synthetic viruses from other viruses in a FASTA
+ * findBig		find the largest file of each type in a directory of directories
  *
  */
 public class App
@@ -136,6 +137,9 @@ public class App
             break;
         case "vsynth" :
             processor = new VSynthProcessor();
+            break;
+        case "findBig" :
+            processor = new FindBigFileProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
