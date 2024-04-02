@@ -13,21 +13,14 @@ import org.theseed.basic.BaseProcessor;
  * famCounts	count the protein families in genomes in a directory
  * roleCounts	count potentially-universal roles in a set of PATRIC genomes
  * simple		echo parameters (for testing)
- * fixMaster	add SSU rRNA information to a master genome directory
  * clean		remove obsolete genomes from a master genome directory
  * copy			copy genomes to a genome master directory
- * modulons		hook up the various modulon types for E coli
  * rnaCheck		verify SSU rRNA sequences against the SILVA database
  * rnaStats		compute statistics on SSU rRNA lengths
- * dnaDist		compute a the maximum distance between DNA FASTA sequences
- * bFinder		return the b-numbers for a send of gene names
+ * dnaDist		compute the maximum distance between DNA FASTA sequences
  * binCheck		remove bad genomes from a binning reference genome FASTA
  * hammerX		check the misses from a hammer run against a distance file
- * zipCheck		validate a master directory with the ZipException bug
  * essential	determine which features in a list are essential
- * rnaFix2		fix up RNA Seq file names
- * unfixed		find unfixed chromosomes
- * rnaRestrain	build RNA Seq strain fixup data file
  * ssuFix		fix bad SSUs in the PATRIC master directory
  * qualCheck	compute the mean quality of a Fastq directory sample group
  * fastaG		update a genome from a FASTA file
@@ -37,6 +30,7 @@ import org.theseed.basic.BaseProcessor;
  * md5Check		check a genome dump directory for MD5s in a protein list
  * vsynth		create synthetic viruses from other viruses in a FASTA
  * findBig		find the largest file of each type in a directory of directories
+ * findAmr		find high-quality genomes in BV-BRC with AMR data
  *
  */
 public class App
@@ -63,17 +57,11 @@ public class App
         case "simple" :
             processor = new SimpleProcessor();
             break;
-        case "fixMaster" :
-            processor = new FixMasterProcessor();
-            break;
-        case "copy" :
+       case "copy" :
             processor = new CopyMasterProcessor();
             break;
         case "clean" :
             processor = new CleanProcessor();
-            break;
-        case "modulons" :
-            processor = new ModulonProcessor();
             break;
         case "rnaCheck" :
             processor = new RnaCheckProcessor();
@@ -84,17 +72,11 @@ public class App
         case "dnaDist" :
             processor = new DnaDistProcessor();
             break;
-        case "bFinder" :
-            processor = new BFinderProcessor();
-            break;
         case "binCheck" :
             processor = new BinCheckProcessor();
             break;
         case "hammerX" :
             processor = new HammerTestProcessor();
-            break;
-        case "zipCheck" :
-            processor = new ZipCheckProcessor();
             break;
         case "hammerCheck" :
             processor = new HammerCheckProcessor();
@@ -108,9 +90,6 @@ public class App
         case "fixConvert" :
             processor = new FixConvertProcessor();
             break;
-        case "rnaFix2" :
-            processor = new RnaFixProcessor2();
-            break;
         case "rnaRestrain" :
             processor = new ReStrainMapProcessor();
             break;
@@ -122,9 +101,6 @@ public class App
             break;
         case "fastaG" :
             processor = new FastaGenomeProcessor();
-            break;
-        case "hammerFix" :
-            processor = new HammerFixProcessor();
             break;
         case "groupTest" :
             processor = new GroupTestProcessor();
@@ -140,6 +116,9 @@ public class App
             break;
         case "findBig" :
             processor = new FindBigFileProcessor();
+            break;
+        case "findAmr" :
+            processor = new FindAmrGenomeProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
