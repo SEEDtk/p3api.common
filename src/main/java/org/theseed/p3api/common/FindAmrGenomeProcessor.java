@@ -170,7 +170,6 @@ public class FindAmrGenomeProcessor extends BasePipeProcessor {
                     amrMap.setBad(genomeId);
                 else {
                     badTypeCount++;
-                    amrMap.setGood(genomeId);
                 }
             }
             log.info("{} eligible genomes found in batch {}.  {} bad phenotypes.", amrMap.size(), this.batchCount, badTypeCount);
