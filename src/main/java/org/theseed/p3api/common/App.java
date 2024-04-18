@@ -14,23 +14,21 @@ import org.theseed.basic.BaseProcessor;
  * roleCounts	count potentially-universal roles in a set of PATRIC genomes
  * simple		echo parameters (for testing)
  * clean		remove obsolete genomes from a master genome directory
- * copy			copy genomes to a genome master directory
  * rnaCheck		verify SSU rRNA sequences against the SILVA database
  * rnaStats		compute statistics on SSU rRNA lengths
  * dnaDist		compute the maximum distance between DNA FASTA sequences
  * binCheck		remove bad genomes from a binning reference genome FASTA
  * hammerX		check the misses from a hammer run against a distance file
  * essential	determine which features in a list are essential
- * ssuFix		fix bad SSUs in the PATRIC master directory
  * qualCheck	compute the mean quality of a Fastq directory sample group
  * fastaG		update a genome from a FASTA file
  * hammerFix	convert hammer strengths to neighborhood-based
- * groupTest	generate a test dataset for the RNA Seq group file formatter
  * hammerComp	compare hammer counts to distances
  * md5Check		check a genome dump directory for MD5s in a protein list
  * vsynth		create synthetic viruses from other viruses in a FASTA
  * findBig		find the largest file of each type in a directory of directories
  * findAmr		find high-quality genomes in BV-BRC with AMR data
+ * mergeCol		merge a column from one tab-delimited file into a single-column file
  *
  */
 public class App
@@ -56,9 +54,6 @@ public class App
             break;
         case "simple" :
             processor = new SimpleProcessor();
-            break;
-       case "copy" :
-            processor = new CopyMasterProcessor();
             break;
         case "clean" :
             processor = new CleanProcessor();
@@ -93,17 +88,11 @@ public class App
         case "rnaRestrain" :
             processor = new ReStrainMapProcessor();
             break;
-        case "ssuFix" :
-            processor = new SsuFixProcessor();
-            break;
         case "qualCheck" :
             processor = new QualCheckProcessor();
             break;
         case "fastaG" :
             processor = new FastaGenomeProcessor();
-            break;
-        case "groupTest" :
-            processor = new GroupTestProcessor();
             break;
         case "hammerComp" :
             processor = new HammerCompareProcessor();
@@ -119,6 +108,9 @@ public class App
             break;
         case "findAmr" :
             processor = new FindAmrGenomeProcessor();
+            break;
+        case "mergeCol" :
+            processor = new MergeColumnProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
