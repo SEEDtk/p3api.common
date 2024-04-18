@@ -83,7 +83,7 @@ public class MergeColumnProcessor extends BasePipeProcessor {
 
     @Override
     protected void runPipeline(TabbedLineReader inputStream, PrintWriter writer) throws Exception {
-        log.info("Coping input to output.");
+        log.info("Copying input to output.");
         // Write the output header.
         writer.println(this.colName);
         // Set up some counters.
