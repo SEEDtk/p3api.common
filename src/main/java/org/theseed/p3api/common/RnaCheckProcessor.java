@@ -24,7 +24,7 @@ import org.theseed.sequence.DnaDataStream;
 import org.theseed.sequence.blast.BlastHit;
 import org.theseed.sequence.blast.BlastParms;
 import org.theseed.sequence.blast.DnaBlastDB;
-import org.theseed.utils.BaseReportProcessor;
+import org.theseed.basic.BaseReportProcessor;
 
 /**
  * This command checks the SSU rRNA sequences in the genomes from an input source.  First, the annotated 16s features are

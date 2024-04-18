@@ -28,7 +28,7 @@ import org.theseed.proteins.kmers.reps.RepGenome;
 import org.theseed.proteins.kmers.reps.RepGenomeDb;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.Sequence;
-import org.theseed.utils.BaseReportProcessor;
+import org.theseed.basic.BaseReportProcessor;
 
 /**
  * This command determines the distances involved in hammer-bin matches that are not correct.
