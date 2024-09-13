@@ -29,6 +29,7 @@ import org.theseed.basic.BaseProcessor;
  * findBig		find the largest file of each type in a directory of directories
  * findAmr		find high-quality genomes in BV-BRC with AMR data
  * mergeCol		merge a column from one tab-delimited file into a single-column file
+ * virusFix		interrogate the BV-BRC database to find virus genomes identified by assembly accession
  *
  */
 public class App
@@ -111,6 +112,9 @@ public class App
             break;
         case "mergeCol" :
             processor = new MergeColumnProcessor();
+            break;
+        case "virusFix" :
+            processor = new VirusFixProcessor();
             break;
         default :
             throw new RuntimeException("Invalid command " + command + ".");
