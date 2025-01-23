@@ -17,9 +17,9 @@ import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
-import org.theseed.proteins.Role;
-import org.theseed.subsystems.SubsystemProjector;
-import org.theseed.subsystems.SubsystemSpec;
+import org.theseed.subsystems.StrictRole;
+import org.theseed.subsystems.core.SubsystemDescriptor;
+import org.theseed.subsystems.core.SubsystemRuleProjector;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -71,7 +71,7 @@ public class SubsystemCheckProcessor extends BaseProcessor {
         // Connect to PATRIC.
         P3Connection p3 = new P3Connection();
         // Load the subsystem projector.
-        SubsystemProjector projector = SubsystemProjector.load(this.projectorFile);
+        SubsystemRuleProjector projector = SubsystemRuleProjector.load(this.projectorFile);
         // Write the report header.
         System.out.println("genome\tfeature_id\trole\tmissing_subsystem\treason");
         // Loop through the genomes.
@@ -89,13 +89,13 @@ public class SubsystemCheckProcessor extends BaseProcessor {
                     if (! featSubs.contains(subName)) {
                         missCount++;
                         String reason = "obsolete variant configuration";
-                        SubsystemSpec subsystem = projector.getSubsystem(subName);
+                        SubsystemDescriptor subsystem = projector.getSubsystem(subName);
                         if (subsystem == null) {
                             reason = "obsolete subsystem";
                             noSuchSubsystem++;
                         } else {
-                            List<Role> roles = feat.getUsefulRoles(projector.usefulRoles());
-                            boolean roleFound = roles.stream().anyMatch(r -> subsystem.contains(r));
+                            List<StrictRole> roles = projector.getUsefulRoles(feat.getFunction());
+                            boolean roleFound = roles.stream().anyMatch(r -> subsystem.contains(r.getName()));
                             if (! roleFound) {
                                 reason = "role no longer in subsystem";
                                 deletedRole++;
