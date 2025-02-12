@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.FieldInputStream;
 import org.theseed.io.TabbedLineReader;
-import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.SolrConnection;
 import org.theseed.utils.BasePipeProcessor;
 
 /**
@@ -66,7 +66,7 @@ public class Md5CheckProcessor extends BasePipeProcessor {
          if (! this.inDir.isDirectory())
              throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
          // Get the genome subdirectories.
-         this.gDirs = this.inDir.listFiles(P3Connection.GENOME_FILTER);
+         this.gDirs = this.inDir.listFiles(SolrConnection.GENOME_FILTER);
          log.info("{} genome feature files found in {}.", this.gDirs.length, this.inDir);
     }
 
@@ -92,7 +92,7 @@ public class Md5CheckProcessor extends BasePipeProcessor {
         for (File gDir : gDirs) {
             final String genome_id = gDir.getName();
             log.info("Processing genome {}.", genome_id);
-            File featFile = new File(gDir, P3Connection.JSON_FILE_NAME);
+            File featFile = new File(gDir, SolrConnection.JSON_FILE_NAME);
             try (FieldInputStream featStream = FieldInputStream.create(featFile)) {
                 // Find the MD5 field for the feature file.
                 int md5Idx = featStream.findField("aa_sequence_md5");

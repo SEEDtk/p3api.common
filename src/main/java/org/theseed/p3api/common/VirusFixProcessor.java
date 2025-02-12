@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.utils.BasePipeProcessor;
@@ -97,10 +98,10 @@ public class VirusFixProcessor extends BasePipeProcessor {
          * @param genome	data record to process
          */
         public GenomeData(JsonObject genome) {
-            this.id = P3Connection.getString(genome, "genome_id");
-            this.name = P3Connection.getString(genome, "genome_name");
-            this.size = P3Connection.getInt(genome, "genome_length");
-            this.accessionId = P3Connection.getString(genome, "assembly_accession");
+            this.id = KeyBuffer.getString(genome, "genome_id");
+            this.name = KeyBuffer.getString(genome, "genome_name");
+            this.size = KeyBuffer.getInt(genome, "genome_length");
+            this.accessionId = KeyBuffer.getString(genome, "assembly_accession");
             this.assertString = VirusFixProcessor.this.accessionBatch.getOrDefault(this.accessionId, "Bad");
         }
 
@@ -232,14 +233,14 @@ public class VirusFixProcessor extends BasePipeProcessor {
         log.info("{} sequences returned from query for {} genome IDs.", contigs.size(), this.genomeBatch.size());
         // Check for duplicates and output the full records found.
         for (JsonObject contig : contigs) {
-            String genomeId = P3Connection.getString(contig, "genome_id");
+            String genomeId = KeyBuffer.getString(contig, "genome_id");
             GenomeData desc = this.genomeBatch.get(genomeId);
             if (desc == null) {
                 log.error("Invalid genome ID {} returned from contig query.", genomeId);
                 this.errCount++;
             } else {
-                String seqId = P3Connection.getString(contig, "sequence_id");
-                String seqMd5 = P3Connection.getString(contig, "sequence_md5");
+                String seqId = KeyBuffer.getString(contig, "sequence_id");
+                String seqMd5 = KeyBuffer.getString(contig, "sequence_md5");
                 String dupFlag;
                 if (this.dupCheckSet.contains(seqMd5)) {
                     // Here we have a duplicate.

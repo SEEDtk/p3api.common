@@ -21,6 +21,7 @@ import org.theseed.basic.BaseProcessor;
 import org.theseed.counters.CountMap;
 import org.theseed.genome.Feature;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.proteins.Role;
@@ -156,10 +157,10 @@ public class RoleCountProcessor extends BaseProcessor {
                 CountMap<String> gCounts = new CountMap<String>();
                 for (JsonObject feature : features) {
                     // Verify the genome.
-                    String genomeId = P3Connection.getString(feature, "genome_id");
+                    String genomeId = KeyBuffer.getString(feature, "genome_id");
                     if (this.genomes.contains(genomeId)) {
                         // Verify the role.
-                        String product = P3Connection.getString(feature, "product");
+                        String product = KeyBuffer.getString(feature, "product");
                         List<Role> roles = Feature.usefulRoles(this.roles, product);
                         if (roles.contains(role))
                             gCounts.count(genomeId);

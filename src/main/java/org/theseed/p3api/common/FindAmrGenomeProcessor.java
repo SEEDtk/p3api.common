@@ -15,6 +15,7 @@ import org.theseed.basic.ParseFailureException;
 import org.theseed.counters.CountMap;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.io.TabbedLineReader.Line;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.stats.QualityCountMap;
@@ -162,8 +163,8 @@ public class FindAmrGenomeProcessor extends BasePipeProcessor {
             // Loop through the results.  For each genome, we could the resistant records (good) and the susceptible records (bad).
             QualityCountMap<String> amrMap = new QualityCountMap<String>();
             for (var result : results) {
-                String genomeId = P3Connection.getString(result, "genome_id");
-                String type = P3Connection.getString(result, "resistant_phenotype");
+                String genomeId = KeyBuffer.getString(result, "genome_id");
+                String type = KeyBuffer.getString(result, "resistant_phenotype");
                 if (type.contentEquals("Resistant"))
                     amrMap.setGood(genomeId);
                 else if (type.contentEquals("Susceptible"))

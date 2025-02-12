@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.Criterion;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.utils.BasePipeProcessor;
@@ -120,8 +121,8 @@ public class EssentialProcessor extends BasePipeProcessor {
                 this.batchMap.size());
         // Form the genes found into a set.
         var essentials = results.stream()
-                .filter(x -> StringUtils.equals(P3Connection.getString(x, "property"), "Essential Gene"))
-                .map(x -> P3Connection.getString(x, "patric_id"))
+                .filter(x -> StringUtils.equals(KeyBuffer.getString(x, "property"), "Essential Gene"))
+                .map(x -> KeyBuffer.getString(x, "patric_id"))
                 .collect(Collectors.toSet());
         // Output all the genes in the batch.
         for (Map.Entry<String, String> entry : this.batchMap.entrySet()) {

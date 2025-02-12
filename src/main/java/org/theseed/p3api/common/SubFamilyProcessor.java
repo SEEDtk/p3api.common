@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.kohsuke.args4j.Option;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.io.TabbedLineReader;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 
@@ -112,10 +113,10 @@ public class SubFamilyProcessor extends BaseProcessor {
         // Get all the features for the subsystem.
         Collection<JsonObject> features = p3.getRecords(Table.SUBSYSTEM_ITEM, "subsystem_id", Collections.singleton(subsystem), "patric_id");
         // Get the protein family for each feature.
-        Collection<String> fids = features.stream().map(x -> P3Connection.getString(x, "patric_id")).collect(Collectors.toSet());
+        Collection<String> fids = features.stream().map(x -> KeyBuffer.getString(x, "patric_id")).collect(Collectors.toSet());
         Map<String, JsonObject> families = p3.getRecords(Table.FEATURE, fids, "pgfam_id");
         // Convert the protein family IDs into a set.
-        Set<String> retVal = families.values().stream().map(x -> P3Connection.getString(x, "pgfam_id")).collect(Collectors.toSet());
+        Set<String> retVal = families.values().stream().map(x -> KeyBuffer.getString(x, "pgfam_id")).collect(Collectors.toSet());
         return retVal;
     }
 

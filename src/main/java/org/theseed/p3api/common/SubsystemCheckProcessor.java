@@ -15,6 +15,7 @@ import org.theseed.basic.BaseProcessor;
 import org.theseed.genome.Feature;
 import org.theseed.genome.Genome;
 import org.theseed.genome.GenomeDirectory;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.p3api.P3Connection.Table;
 import org.theseed.subsystems.StrictRole;
@@ -80,8 +81,8 @@ public class SubsystemCheckProcessor extends BaseProcessor {
             List<JsonObject> subsystemItems = p3.getRecords(Table.SUBSYSTEM_ITEM, "genome_id", Collections.singleton(genome.getId()),
                     "patric_id,subsystem_name");
             for (JsonObject record : subsystemItems) {
-                String fid = P3Connection.getString(record, "patric_id");
-                String subName = P3Connection.getString(record, "subsystem_name");
+                String fid = KeyBuffer.getString(record, "patric_id");
+                String subName = KeyBuffer.getString(record, "subsystem_name");
                 Feature feat = genome.getFeature(fid);
                 if (feat != null) {
                     total++;

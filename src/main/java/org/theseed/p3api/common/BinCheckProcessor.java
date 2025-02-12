@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 import org.theseed.sequence.FastaInputStream;
 import org.theseed.sequence.FastaOutputStream;
@@ -95,7 +96,7 @@ public class BinCheckProcessor extends BaseProcessor {
         List<JsonObject> genomes = new ArrayList<JsonObject>(500000);
         p3.addAllProkaryotes(genomes);
         // Create a set of the genome IDs.
-        var retVal = genomes.stream().map(x -> P3Connection.getString(x, "genome_id"))
+        var retVal = genomes.stream().map(x -> KeyBuffer.getString(x, "genome_id"))
                 .collect(Collectors.toSet());
         return retVal;
     }

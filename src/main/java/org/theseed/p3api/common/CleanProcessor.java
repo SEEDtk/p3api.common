@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.GenomeMultiDirectory;
+import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3Connection;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -86,7 +87,7 @@ public class CleanProcessor extends BaseProcessor {
         Set<String> retVal = new HashSet<String>(genomes.getIDs());
         // Remove the good ones, leaving only the bad ones.
         for (JsonObject good : goodList) {
-            String goodId = P3Connection.getString(good, "genome_id");
+            String goodId = KeyBuffer.getString(good, "genome_id");
             retVal.remove(goodId);
         }
         log.info("{} genomes will be deleted.", retVal.size());
