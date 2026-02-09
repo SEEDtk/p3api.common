@@ -52,13 +52,12 @@ public class QualCheckProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Get a filter for this group type.
         FileFilter filter = this.groupType.getFilter();
         if (! filter.accept(this.inDir))
             throw new FileNotFoundException(this.inDir + " is not found or not a valid FASTQ sample group directory of type "
                     + this.groupType.toString());
-        return true;
     }
 
     @Override

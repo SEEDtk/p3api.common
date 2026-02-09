@@ -48,19 +48,18 @@ public class FamilyCountProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         // Connect to the genome directory.
         if (! inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " not found or invalid.");
         this.genomes = new GenomeDirectory(this.inDir);
         log.info("{} genomes found in {}.", this.genomes.size(), this.inDir);
-        return true;
     }
 
     @Override
     protected void runCommand() throws Exception {
         // Initialize the count map.
-        this.familyCounts = new CountMap<String>();
+        this.familyCounts = new CountMap<>();
         // We will track the number of features containing families.
         int genomeCount = 0;
         int pegCount = 0;

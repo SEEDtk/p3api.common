@@ -6,6 +6,7 @@ package org.theseed.p3api.common;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -19,7 +20,7 @@ import org.theseed.basic.BaseProcessor;
 import org.theseed.basic.ParseFailureException;
 import org.theseed.genome.GenomeMultiDirectory;
 import org.theseed.p3api.KeyBuffer;
-import org.theseed.p3api.P3Connection;
+import org.theseed.p3api.P3CursorConnection;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
 
@@ -52,10 +53,9 @@ public class CleanProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         if (! this.inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
-        return true;
     }
 
     @Override
@@ -79,12 +79,16 @@ public class CleanProcessor extends BaseProcessor {
      * @param genomes	the input genomes
      */
     private Set<String> getDeleteSet(GenomeMultiDirectory genomes) {
-        List<JsonObject> goodList = new ArrayList<JsonObject>(genomes.size());
-        P3Connection p3 = new P3Connection();
-        p3.addAllProkaryotes(goodList);
+        List<JsonObject> goodList = new ArrayList<>(genomes.size());
+        var p3 = new P3CursorConnection();
+        try {
+            p3.addAllProkaryotes(goodList);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         log.info("{} eligible genomes in PATRIC.", goodList.size());
         // Get the set of genome IDs in the input directory.
-        Set<String> retVal = new HashSet<String>(genomes.getIDs());
+        Set<String> retVal = new HashSet<>(genomes.getIDs());
         // Remove the good ones, leaving only the bad ones.
         for (JsonObject good : goodList) {
             String goodId = KeyBuffer.getString(good, "genome_id");

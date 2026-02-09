@@ -3,11 +3,11 @@
  */
 package org.theseed.p3api.common;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.kohsuke.args4j.Argument;
 import org.slf4j.Logger;
@@ -48,10 +48,9 @@ public class DnaDistProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         if (! this.inFile.canRead())
             throw new FileNotFoundException("Input file " + this.inFile + " is not found or unreadable.");
-        return true;
     }
 
     @Override

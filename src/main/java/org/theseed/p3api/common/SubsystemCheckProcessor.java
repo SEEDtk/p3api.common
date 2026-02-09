@@ -39,6 +39,10 @@ import com.github.cliftonlabs.json_simple.JsonObject;
  */
 public class SubsystemCheckProcessor extends BaseProcessor {
 
+    // FIELDS
+    /** logging facility */
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SubsystemCheckProcessor.class);
+
     // COMMAND-LINE OPTIONS
 
     @Argument(index = 0, metaVar = "gtoDir", usage = "genome input directory", required = true)
@@ -52,12 +56,11 @@ public class SubsystemCheckProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         if (! this.inDir.isDirectory())
             throw new FileNotFoundException("Input directory " + this.inDir + " is not found or invalid.");
         if (! this.projectorFile.canRead())
             throw new FileNotFoundException("Projector file " + this.projectorFile + " is not found or invalid.");
-        return true;
     }
 
     @Override

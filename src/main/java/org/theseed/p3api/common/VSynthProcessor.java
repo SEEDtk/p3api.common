@@ -65,18 +65,13 @@ public class VSynthProcessor extends BaseProcessor {
     /** name pattern for FASTA files */
     private static final Pattern FASTA_PATTERN = Pattern.compile(".+\\.(?:fna|fa|fasta)");
     /** file filter for FASTA files */
-    private static final FileFilter FASTA_FILTER = new FileFilter() {
-
-        @Override
-        public boolean accept(File pathname) {
-            boolean retVal = false;
-            if (pathname.canRead() && pathname.isFile()) {
-                Matcher m = FASTA_PATTERN.matcher(pathname.getName());
-                retVal = m.matches();
-            }
-            return retVal;
+    private static final FileFilter FASTA_FILTER = (File pathname) -> {
+        boolean retVal = false;
+        if (pathname.canRead() && pathname.isFile()) {
+            Matcher m = FASTA_PATTERN.matcher(pathname.getName());
+            retVal = m.matches();
         }
-
+        return retVal;
     };
 
     // COMMAND-LINE OPTIONS
@@ -87,7 +82,7 @@ public class VSynthProcessor extends BaseProcessor {
 
     /** list of completeness fractions */
     @Option(name = "--complete", usage = "comma-delimited list of completeness fractions")
-    private void setComplete(String completeString) {
+    protected void setComplete(String completeString) {
         this.fractions = new FloatList(completeString);
     }
 
@@ -103,7 +98,7 @@ public class VSynthProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Initialize the randomizer.
         this.randomizer = new Random();
         // Verify that all the fractions are in range.
@@ -121,7 +116,7 @@ public class VSynthProcessor extends BaseProcessor {
         // Compute the number of sequences that will be generated for each file.
         int listSize = this.fractions.size() * 2 + 1;
         // Now read them into memory, giving each one a space in the main hash.
-        this.contigMap = new HashMap<String, List<Sequence>>(inFiles.length * 3 / 2 + 1);
+        this.contigMap = new HashMap<>(inFiles.length * 3 / 2 + 1);
         log.info("Reading {} single-contig FASTA files.", inFiles.length);
         for (File inFile : inFiles) {
             try (FastaInputStream inStream = new FastaInputStream(inFile)) {
@@ -134,7 +129,7 @@ public class VSynthProcessor extends BaseProcessor {
                     throw new IOException("File " + inFile + " has a duplicate name.  The un-suffixed name of each file must be unique.");
                 // Create the label for a full sequence.
                 inSeq.setLabel(seqName + ".full");
-                List<Sequence> seqList = new ArrayList<Sequence>(listSize);
+                List<Sequence> seqList = new ArrayList<>(listSize);
                 seqList.add(inSeq);
                 this.contigMap.put(seqName, seqList);
             }
@@ -147,14 +142,13 @@ public class VSynthProcessor extends BaseProcessor {
             log.info("Output will be to the file {}.", this.outFile);
             this.outStream = new FastaOutputStream(this.outFile);
         }
-        return true;
     }
 
     @Override
     protected void runCommand() throws Exception {
         try {
             // This list will contain the previous fractional sequences.  We pull our contamination from here.
-            List<Sequence> oldSeqs = new ArrayList<Sequence>(this.contigMap.size() * 2 * this.fractions.size());
+            List<Sequence> oldSeqs = new ArrayList<>(this.contigMap.size() * 2 * this.fractions.size());
             int contamSeqs = 0;
             // Loop through the input files, processing each one.
             for (var seqEntry : this.contigMap.entrySet()) {
@@ -164,10 +158,10 @@ public class VSynthProcessor extends BaseProcessor {
                 Sequence original = seqs.get(0);
                 String oldSeq = original.getSequence();
                 int len = original.length();
-                StringBuffer seqBuffer = new StringBuffer(len);
+                StringBuilder seqBuffer = new StringBuilder(len);
                 log.info("Processing sequence {} with length {}.", seqName, len);
                 // We will buffer fractional sequences in here.
-                List<Sequence> fractionals = new ArrayList<Sequence>(this.fractions.size());
+                List<Sequence> fractionals = new ArrayList<>(this.fractions.size());
                 // Loop through the fractions.
                 for (double frac : this.fractions) {
                     // Compute the desired fractional length.  Because we are truncating, it will be strictly

@@ -43,6 +43,8 @@ import com.github.cliftonlabs.json_simple.JsonObject;
 public class SubFamilyProcessor extends BaseProcessor {
 
     // FIELDS
+    /** logging facility */
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SubFamilyProcessor.class);
     /** set of protein families found in all subsystems */
     private Set<String> allFamilies;
     /** index of input key column */
@@ -70,7 +72,7 @@ public class SubFamilyProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         if (this.inFile != null) {
             if (! this.inFile.canRead())
                 throw new FileNotFoundException("Input file " + this.inFile + " is not found or unreadable.");
@@ -84,7 +86,6 @@ public class SubFamilyProcessor extends BaseProcessor {
         }
         // Find the input column.
         this.keyIdx = this.inStream.findField(this.keyCol);
-        return true;
     }
 
     @Override
@@ -92,7 +93,7 @@ public class SubFamilyProcessor extends BaseProcessor {
         // Connect to PATRIC.
         this.p3 = new P3Connection();
         // Create the master family set.
-        this.allFamilies = new HashSet<String>();
+        this.allFamilies = new HashSet<>();
         System.out.println("subsystem_id\tfamilies");
         // Loop through the subsystems.
         for (TabbedLineReader.Line line : this.inStream) {

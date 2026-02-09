@@ -33,8 +33,7 @@ public class SimpleProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
-        return true;
+    protected void validateParms() throws IOException {
     }
 
     @Override

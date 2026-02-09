@@ -90,14 +90,14 @@ public class RoleCountProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException {
+    protected void validateParms() throws IOException {
         // Read in the genomes.
         if (! genomeFile.canRead())
             throw new FileNotFoundException("Genome file " + this.genomeFile + " not found or unreadable.");
         else try (TabbedLineReader genomeStream = new TabbedLineReader(genomeFile)) {
             log.info("Reading genome IDs from {}.", genomeFile);
             int gCol = genomeStream.findField(this.genomeCol);
-            this.genomes = new HashSet<String>(5000);
+            this.genomes = new HashSet<>(5000);
             for (TabbedLineReader.Line line : genomeStream)
                 this.genomes.add(line.get(gCol));
             log.info("{} genome IDs read.", this.genomes.size());
@@ -109,9 +109,9 @@ public class RoleCountProcessor extends BaseProcessor {
             this.roles = RoleMap.load(this.roleFile);
         log.info("{} roles loaded from {}.", this.roles.size(), this.roleFile);
         // Create the role counts.
-        this.roleCounts = new CountMap<Role>();
+        this.roleCounts = new CountMap<>();
         // Process the checkpoint file.
-        this.oldCounts = new CountMap<String>();
+        this.oldCounts = new CountMap<>();
         if (this.checkFile != null) {
             if (this.checkFile.canRead()) {
                 // Here the checkpoint file already exists.  Read it in and then prepare to append.
@@ -137,7 +137,6 @@ public class RoleCountProcessor extends BaseProcessor {
         }
         // Connect to PATRIC.
         this.p3 = new P3Connection();
-        return true;
     }
 
     @Override
@@ -154,15 +153,15 @@ public class RoleCountProcessor extends BaseProcessor {
                 // No.  Ask the database.  Request all the features with the given role.
                 List<JsonObject> features = p3.getRecords(Table.FEATURE, "product", Collections.singleton(role.getName()), "genome_id,patric_id,product");
                 //Now we count the number of times the role occurs in each genome.
-                CountMap<String> gCounts = new CountMap<String>();
+                CountMap<String> gCounts = new CountMap<>();
                 for (JsonObject feature : features) {
                     // Verify the genome.
                     String genomeId = KeyBuffer.getString(feature, "genome_id");
                     if (this.genomes.contains(genomeId)) {
                         // Verify the role.
                         String product = KeyBuffer.getString(feature, "product");
-                        List<Role> roles = Feature.usefulRoles(this.roles, product);
-                        if (roles.contains(role))
+                        List<Role> roles2 = Feature.usefulRoles(this.roles, product);
+                        if (roles2.contains(role))
                             gCounts.count(genomeId);
                     }
                 }

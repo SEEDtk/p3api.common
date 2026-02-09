@@ -30,6 +30,7 @@ import org.theseed.basic.BaseProcessor;
  * findAmr		find high-quality genomes in BV-BRC with AMR data
  * mergeCol		merge a column from one tab-delimited file into a single-column file
  * virusFix		interrogate the BV-BRC database to find virus genomes identified by assembly accession
+ * combineJson	combine multiple JSON files into a single file
  *
  */
 public class App
@@ -41,87 +42,34 @@ public class App
         String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         BaseProcessor processor;
         switch (command) {
-        case "subcheck" :
-            processor = new SubsystemCheckProcessor();
-            break;
-        case "subfams" :
-            processor = new SubFamilyProcessor();
-            break;
-        case "famCounts" :
-            processor = new FamilyCountProcessor();
-            break;
-        case "roleCounts" :
-            processor = new RoleCountProcessor();
-            break;
-        case "simple" :
-            processor = new SimpleProcessor();
-            break;
-        case "clean" :
-            processor = new CleanProcessor();
-            break;
-        case "rnaCheck" :
-            processor = new RnaCheckProcessor();
-            break;
-        case "rnaStats" :
-            processor = new RnaStatsProcessor();
-            break;
-        case "dnaDist" :
-            processor = new DnaDistProcessor();
-            break;
-        case "binCheck" :
-            processor = new BinCheckProcessor();
-            break;
-        case "hammerX" :
-            processor = new HammerTestProcessor();
-            break;
-        case "hammerCheck" :
-            processor = new HammerCheckProcessor();
-            break;
-        case "essential" :
-            processor = new EssentialProcessor();
-            break;
-        case "rnaFix" :
-            processor = new RnaFixProcessor();
-            break;
-        case "fixConvert" :
-            processor = new FixConvertProcessor();
-            break;
-        case "rnaRestrain" :
-            processor = new ReStrainMapProcessor();
-            break;
-        case "qualCheck" :
-            processor = new QualCheckProcessor();
-            break;
-        case "fastaG" :
-            processor = new FastaGenomeProcessor();
-            break;
-        case "hammerComp" :
-            processor = new HammerCompareProcessor();
-            break;
-        case "md5Check" :
-            processor = new Md5CheckProcessor();
-            break;
-        case "vsynth" :
-            processor = new VSynthProcessor();
-            break;
-        case "findBig" :
-            processor = new FindBigFileProcessor();
-            break;
-        case "findAmr" :
-            processor = new FindAmrGenomeProcessor();
-            break;
-        case "mergeCol" :
-            processor = new MergeColumnProcessor();
-            break;
-        case "virusFix" :
-            processor = new VirusFixProcessor();
-            break;
-        default :
-            throw new RuntimeException("Invalid command " + command + ".");
+        case "subcheck" -> processor = new SubsystemCheckProcessor();
+        case "subfams" -> processor = new SubFamilyProcessor();
+        case "famCounts" -> processor = new FamilyCountProcessor();
+        case "roleCounts" -> processor = new RoleCountProcessor();
+        case "simple" -> processor = new SimpleProcessor();
+        case "clean" -> processor = new CleanProcessor();
+        case "rnaCheck" -> processor = new RnaCheckProcessor();
+        case "rnaStats" -> processor = new RnaStatsProcessor();
+        case "dnaDist" -> processor = new DnaDistProcessor();
+        case "hammerX" -> processor = new HammerTestProcessor();
+        case "hammerCheck" -> processor = new HammerCheckProcessor();
+        case "essential" -> processor = new EssentialProcessor();
+        case "rnaFix" -> processor = new RnaFixProcessor();
+        case "fixConvert" -> processor = new FixConvertProcessor();
+        case "rnaRestrain" -> processor = new ReStrainMapProcessor();
+        case "qualCheck" -> processor = new QualCheckProcessor();
+        case "fastaG" -> processor = new FastaGenomeProcessor();
+        case "hammerComp" -> processor = new HammerCompareProcessor();
+        case "md5Check" -> processor = new Md5CheckProcessor();
+        case "vsynth" -> processor = new VSynthProcessor();
+        case "findBig" -> processor = new FindBigFileProcessor();
+        case "findAmr" -> processor = new FindAmrGenomeProcessor();
+        case "mergeCol" -> processor = new MergeColumnProcessor();
+        case "virusFix" -> processor = new VirusFixProcessor();
+        case "combineJson" -> processor = new CombineJsonProcessor();
+        default -> throw new RuntimeException("Invalid command " + command + ".");
         }
-        boolean ok = processor.parseCommand(newArgs);
-        if (ok) {
-            processor.run();
-        }
+        processor.parseCommand(newArgs);
+        processor.run();
     }
 }

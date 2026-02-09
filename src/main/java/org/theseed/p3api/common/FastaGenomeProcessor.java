@@ -66,7 +66,7 @@ public class FastaGenomeProcessor extends BaseProcessor {
     }
 
     @Override
-    protected boolean validateParms() throws IOException, ParseFailureException {
+    protected void validateParms() throws IOException, ParseFailureException {
         // Create the scaffold string.  We search for this to find a break.
         if (this.scaffoldSize < 2)
             throw new ParseFailureException("N size must be at least 2.");
@@ -79,7 +79,6 @@ public class FastaGenomeProcessor extends BaseProcessor {
             throw new FileNotFoundException("Genome input file " + this.genomeFile + " is not found or unreadable.");
         this.genome = new Genome(this.genomeFile);
         log.info("{} loaded from {}.", this.genome, this.genomeFile);
-        return true;
     }
 
     @Override
@@ -108,8 +107,7 @@ public class FastaGenomeProcessor extends BaseProcessor {
                 while (pos < len) {
                     final char ch = dna.charAt(pos);
                     switch (ch) {
-                    case 'x' :
-                    case 'n' :
+                    case 'x', 'n' -> {
                         // Here we have an ambiguity character.
                         nCount++;
                         if (nCount >= this.scaffoldSize && fragment.length() > 0) {
@@ -119,8 +117,8 @@ public class FastaGenomeProcessor extends BaseProcessor {
                             // Set up for the next fragment.
                             fragment.setLength(0);
                         }
-                        break;
-                    default :
+                        }
+                    default -> {
                         // Here we have a real character.
                         if (nCount > 0) {
                             // Here we have some ambiguity characters to handle.
@@ -136,6 +134,7 @@ public class FastaGenomeProcessor extends BaseProcessor {
                             }
                         }
                         fragment.append(ch);
+                        }
                     }
                     // Update the position.
                     pos++;
