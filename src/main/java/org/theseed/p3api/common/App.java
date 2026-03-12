@@ -25,7 +25,7 @@ import org.theseed.basic.BaseProcessor;
  * hammerFix	convert hammer strengths to neighborhood-based
  * hammerComp	compare hammer counts to distances
  * md5Check		check a genome dump directory for MD5s in a protein list
- * vsynth		create synthetic viruses from other viruses in a FASTA
+ * doneCheck	remove completed groups from a run list
  * findBig		find the largest file of each type in a directory of directories
  * findAmr		find high-quality genomes in BV-BRC with AMR data
  * mergeCol		merge a column from one tab-delimited file into a single-column file
@@ -35,6 +35,34 @@ import org.theseed.basic.BaseProcessor;
  */
 public class App
 {
+
+    protected static final String[] COMMANDS = new String[] {
+         "subfams", "count the protein families for each role in a subsystem",
+ 		 "roles", "count the number of times each role occurs singly in a prokaryote",
+ 		 "subcheck", "validate the subsystems in a GTO against the subsystems in PATRIC",
+ 		 "famCounts", "count the protein families in genomes in a directory",
+ 		 "roleCounts", "count potentially-universal roles in a set of PATRIC genomes",
+ 		 "simple", "echo parameters (for testing)",
+ 		 "clean", "remove obsolete genomes from a master genome directory",
+ 		 "rnaCheck", "verify SSU rRNA sequences against the SILVA database",
+ 		 "rnaStats", "compute statistics on SSU rRNA lengths",
+ 		 "dnaDist", "compute the maximum distance between DNA FASTA sequences",
+ 		 "binCheck", "remove bad genomes from a binning reference genome FASTA",
+ 		 "hammerX", "check the misses from a hammer run against a distance file",
+ 		 "essential", "determine which features in a list are essential",
+ 		 "qualCheck", "compute the mean quality of a Fastq directory sample group",
+ 		 "fastaG", "update a genome from a FASTA file",
+ 		 "hammerFix", "convert hammer strengths to neighborhood-based",
+ 		 "hammerComp", "compare hammer counts to distances",
+ 		 "md5Check", "check a genome dump directory for MD5s in a protein list",
+ 		 "doneCheck", "remove completed groups from a run list",
+ 		 "findBig", "find the largest file of each type in a directory of directories",
+ 		 "findAmr", "find high-quality genomes in BV-BRC with AMR data",
+ 		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
+ 		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
+ 		 "combineJson", "combine multiple JSON files into a single file",
+    };
+
     public static void main( String[] args )
     {
         // Get the control parameter.
@@ -61,15 +89,20 @@ public class App
         case "fastaG" -> processor = new FastaGenomeProcessor();
         case "hammerComp" -> processor = new HammerCompareProcessor();
         case "md5Check" -> processor = new Md5CheckProcessor();
-        case "vsynth" -> processor = new VSynthProcessor();
+        case "doneCheck" -> processor = new DoneCheckProcessor();
         case "findBig" -> processor = new FindBigFileProcessor();
         case "findAmr" -> processor = new FindAmrGenomeProcessor();
         case "mergeCol" -> processor = new MergeColumnProcessor();
         case "virusFix" -> processor = new VirusFixProcessor();
         case "combineJson" -> processor = new CombineJsonProcessor();
+        case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
-        processor.parseCommand(newArgs);
-        processor.run();
+        if (processor == null)
+            BaseProcessor.showCommands(COMMANDS);
+        else {
+            processor.parseCommand(newArgs);
+            processor.run();
+        }
     }
 }
