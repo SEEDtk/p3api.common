@@ -73,7 +73,9 @@ public class DoneCheckProcessor extends BaseReportProcessor {
             this.runMap = new HashMap<>();
             for (String line : inStream) {
                 String group = StringUtils.substringAfterLast(line, " ");
-                this.runMap.put(group, line);
+                // This next check insures that blank input lines don't cause a problem.
+                if (! StringUtils.isBlank(group))
+                    this.runMap.put(group, line);
             }
             log.info("{} groups found in input script.", this.runMap.size());
         }
