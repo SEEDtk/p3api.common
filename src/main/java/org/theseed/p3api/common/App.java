@@ -8,7 +8,6 @@ import org.theseed.basic.BaseProcessor;
  * This application performs various useful PATRIC API tasks.
  *
  * subfams		count the protein families for each role in a subsystem
- * roles		count the number of times each role occurs singly in a prokaryote
  * subcheck		validate the subsystems in a GTO against the subsystems in PATRIC
  * famCounts	count the protein families in genomes in a directory
  * roleCounts	count potentially-universal roles in a set of PATRIC genomes
@@ -31,6 +30,8 @@ import org.theseed.basic.BaseProcessor;
  * mergeCol		merge a column from one tab-delimited file into a single-column file
  * virusFix		interrogate the BV-BRC database to find virus genomes identified by assembly accession
  * combineJson	combine multiple JSON files into a single file
+ * coreReport   look at the results of the core genome match command and produce a report
+ * funReport    look at the results of the functional role match command and produce a report
  *
  */
 public class App
@@ -38,7 +39,6 @@ public class App
 
     protected static final String[] COMMANDS = new String[] {
          "subfams", "count the protein families for each role in a subsystem",
- 		 "roles", "count the number of times each role occurs singly in a prokaryote",
  		 "subcheck", "validate the subsystems in a GTO against the subsystems in PATRIC",
  		 "famCounts", "count the protein families in genomes in a directory",
  		 "roleCounts", "count potentially-universal roles in a set of PATRIC genomes",
@@ -58,6 +58,8 @@ public class App
  		 "doneCheck", "remove completed groups from a run list",
  		 "findBig", "find the largest file of each type in a directory of directories",
  		 "findAmr", "find high-quality genomes in BV-BRC with AMR data",
+ 		 "coreReport", "look at the results of the core genome match command and produce a report",
+ 		 "funReport", "look at the results of the functional role match command and produce a report",
  		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
  		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
  		 "combineJson", "combine multiple JSON files into a single file",
@@ -82,8 +84,6 @@ public class App
         case "hammerX" -> processor = new HammerTestProcessor();
         case "hammerCheck" -> processor = new HammerCheckProcessor();
         case "essential" -> processor = new EssentialProcessor();
-        case "rnaFix" -> processor = new RnaFixProcessor();
-        case "fixConvert" -> processor = new FixConvertProcessor();
         case "rnaRestrain" -> processor = new ReStrainMapProcessor();
         case "qualCheck" -> processor = new QualCheckProcessor();
         case "fastaG" -> processor = new FastaGenomeProcessor();
@@ -95,6 +95,8 @@ public class App
         case "mergeCol" -> processor = new MergeColumnProcessor();
         case "virusFix" -> processor = new VirusFixProcessor();
         case "combineJson" -> processor = new CombineJsonProcessor();
+        case "coreReport" -> processor = new CoreReportProcessor();
+        case "funReport" -> processor = new FunReportProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
