@@ -10,7 +10,6 @@ import org.theseed.basic.BaseProcessor;
  * subfams		count the protein families for each role in a subsystem
  * subcheck		validate the subsystems in a GTO against the subsystems in PATRIC
  * famCounts	count the protein families in genomes in a directory
- * roleCounts	count potentially-universal roles in a set of PATRIC genomes
  * simple		echo parameters (for testing)
  * clean		remove obsolete genomes from a master genome directory
  * rnaCheck		verify SSU rRNA sequences against the SILVA database
@@ -41,7 +40,6 @@ public class App
          "subfams", "count the protein families for each role in a subsystem",
  		 "subcheck", "validate the subsystems in a GTO against the subsystems in PATRIC",
  		 "famCounts", "count the protein families in genomes in a directory",
- 		 "roleCounts", "count potentially-universal roles in a set of PATRIC genomes",
  		 "simple", "echo parameters (for testing)",
  		 "clean", "remove obsolete genomes from a master genome directory",
  		 "rnaCheck", "verify SSU rRNA sequences against the SILVA database",
@@ -75,7 +73,6 @@ public class App
         case "subcheck" -> processor = new SubsystemCheckProcessor();
         case "subfams" -> processor = new SubFamilyProcessor();
         case "famCounts" -> processor = new FamilyCountProcessor();
-        case "roleCounts" -> processor = new RoleCountProcessor();
         case "simple" -> processor = new SimpleProcessor();
         case "clean" -> processor = new CleanProcessor();
         case "rnaCheck" -> processor = new RnaCheckProcessor();
