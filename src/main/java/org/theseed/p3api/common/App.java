@@ -31,6 +31,7 @@ import org.theseed.basic.BaseProcessor;
  * combineJson	combine multiple JSON files into a single file
  * coreReport   look at the results of the core genome match command and produce a report
  * funReport    look at the results of the functional role match command and produce a report
+ * fastaLen     compute the length of the sequences in a FASTA file
  *
  */
 public class App
@@ -56,11 +57,15 @@ public class App
  		 "doneCheck", "remove completed groups from a run list",
  		 "findBig", "find the largest file of each type in a directory of directories",
  		 "findAmr", "find high-quality genomes in BV-BRC with AMR data",
+ 		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
+ 		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
+ 		 "combineJson", "combine multiple JSON files into a single file",
  		 "coreReport", "look at the results of the core genome match command and produce a report",
  		 "funReport", "look at the results of the functional role match command and produce a report",
  		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
  		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
  		 "combineJson", "combine multiple JSON files into a single file",
+ 		 "fastaLen", "compute the length of the sequences in a FASTA file",
     };
 
     public static void main( String[] args )
@@ -94,6 +99,7 @@ public class App
         case "combineJson" -> processor = new CombineJsonProcessor();
         case "coreReport" -> processor = new CoreReportProcessor();
         case "funReport" -> processor = new FunReportProcessor();
+        case "fastaLen" -> processor = new FastaLenProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
