@@ -32,7 +32,8 @@ import org.theseed.basic.BaseProcessor;
  * coreReport   look at the results of the core genome match command and produce a report
  * funReport    look at the results of the functional role match command and produce a report
  * fastaLen     compute the length of the sequences in a FASTA file
- * finderSamp   create a finder kmer testing file for a set of genomes
+ * finderSamp   test finder-kmer representative sets
+ * finderHist   create histogram bins from finder-kmer closeness values in one or more genome files
  *
  */
 public class App
@@ -103,6 +104,7 @@ public class App
         case "funReport" -> processor = new FunReportProcessor();
         case "fastaLen" -> processor = new FastaLenProcessor();
         case "finderSamp" -> processor = new FinderSampProcessor();
+        case "finderHist" -> processor = new FinderHistProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
