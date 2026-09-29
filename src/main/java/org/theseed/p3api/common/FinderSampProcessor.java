@@ -2,6 +2,7 @@ package org.theseed.p3api.common;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.Duration;
@@ -52,6 +53,10 @@ import com.github.cliftonlabs.json_simple.JsonObject;
  * --clear	    erase the output directory before processing
  * --limits     closeness limits for the representative sets, comma-delimited, must be between 0 and 1 (default "0.2,0.4,0.5,0.6,0.7,0.8,0.9,0.95")
  * --roles      role definition file for the roles to use; default "roles.for.finder" in the current directory
+ * --resume     if specified, then an interrupted run will be resumed starting after the last completed input file
+ * 
+ * Note that --clear and --resume are mutually exclusive.
+ * 
  *
  * @author Bruce Parrello
  * 
@@ -69,6 +74,8 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
     private P3CursorConnection p3;
     /** corrected list of input files */
     private List<File> inputFiles;
+    /** name of the main report output file */
+    private File summaryFileName;
 
     // COMMAND-LINE OPTIONS
 
@@ -87,6 +94,10 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
     /** role definition file for the roles to use */
     @Option(name = "--roles", metaVar = "roles.for.finder", usage = "role definition file for the roles to use")
     private File roleFile;
+
+    /** if specified, resume processing by skipping input files already listed in the summary.tbl file */
+    @Option(name = "--resume", usage = "if specified, resume processing by skipping input files already listed in the summary.tbl file")
+    private boolean resume;
     
     /** maximum number of repgen sets to generate per pass */
     @Option(name = "--N", aliases = { "-N" }, metaVar = "4", usage = "maximum number of repgen sets to generate per pass")
@@ -109,6 +120,7 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
         this.batchSize = 400;
         this.maxThreads = 4;
         this.inColumn = "1";
+        this.resume = false;
     }
 
     @Override
@@ -116,6 +128,12 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
         // Insure we have input files.
         if (this.userInputFiles.isEmpty())
             throw new ParseFailureException("No input files specified.");
+        // If we have a resume flag, insure we don't clear the output directory.
+        if (this.resume && this.clearing())
+            throw new ParseFailureException("Cannot resume processing when the output directory is set to be cleared.");
+        this.summaryFileName = this.getOutFile("summary.tbl");
+        if (this.resume && ! this.summaryFileName.canRead())
+            throw new ParseFailureException("Cannot resume processing because the summary file " + this.summaryFileName + " is not found or unreadable.");
         // Process the wildcards.
         this.inputFiles = new ArrayList<>();
         for (File userFile : this.userInputFiles) {
@@ -132,6 +150,12 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
         for (File inputFile : this.inputFiles) {
             if (!inputFile.canRead())
                 throw new ParseFailureException("Input file " + inputFile + " is not found or is unreadable.");
+        }
+        // If we are resuming, remove the files we've already processed from the input file list.
+        if (this.resume) {
+            Set<String> processedFiles = TabbedLineReader.readSet(this.summaryFileName, "in_file");
+            this.inputFiles.removeIf(file -> processedFiles.contains(file.getName()));
+            log.info("{} input files removed due to resume. {} left.", processedFiles.size(), this.inputFiles.size());
         }
         // Verify the role file is readable.
         if (!this.roleFile.canRead())
@@ -155,12 +179,7 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
     @Override
     protected void runMultiReports() throws Exception {
         // Set up the main report writer.
-        try (PrintWriter mainReportWriter = this.openReport("summary.tbl")) {
-            // Create the header for the main report.
-            mainReportWriter.print("in_file\tsize\tmin\tmean\tmax\tsdev\tskew");
-            for (int idx = 0; idx < this.limits.length; idx++)
-                mainReportWriter.print("\t" + this.limits[idx]);
-            mainReportWriter.println();
+        try (PrintWriter mainReportWriter = this.openSummaryFile()) {
             // We need to sort the files from smallest to largest. The hope is to get as many files
             // finished as possible before we run out of memory.
             this.inputFiles.sort((f1, f2) -> Long.compare(f1.length(), f2.length()));
@@ -228,6 +247,31 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
                 }
             }
         }
+    }
+
+    /**
+     * Open the summary file for output. We open for normal writing in most cases and
+     * then write the header. If we are resuming from a previous run, we open for appending.
+     * 
+     * @return the output file stream
+     * 
+     * @throws IOException
+     */
+    private PrintWriter openSummaryFile() throws IOException {
+        PrintWriter retVal;
+        if (this.resume) {
+            log.info("Resuming from previous run. Appending to summary file.");
+            retVal = new PrintWriter(new FileWriter(this.summaryFileName, true));
+        } else {
+            log.info("Starting a new run. Initializing summary file.");
+            retVal = new PrintWriter(this.summaryFileName);
+            // Create the header for the main report.
+            retVal.print("in_file\tsize\tmin\tmean\tmax\tsdev\tskew");
+            for (int idx = 0; idx < this.limits.length; idx++)
+                retVal.print("\t" + this.limits[idx]);
+            retVal.println();
+        }
+        return retVal;
     }
 
     /**
