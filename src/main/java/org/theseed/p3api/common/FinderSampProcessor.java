@@ -193,26 +193,34 @@ public class FinderSampProcessor extends BaseMultiReportProcessor {
                 // Our last preparation step: get a map from genome IDs to names for the inputs.
                 // We will need the names when we output the repgen file.
                 Map<String, String> genomeMap = this.getGenomeMap(inputFile);
-                // Now we compute the stats for these genomes.
-                FinderKmerStats stats = FinderKmerStats.compute(genomeMap.keySet().stream(), FinderKmerStats.SamplingType.DENSE,
-                        this.batchSize, this.p3, this.roleMap);
-                // Get the min, max, mean, standard deviation, and skewness from the stats.                
-                double min = stats.getMin();
-                double max = stats.getMax();
-                double mean = stats.getMean();
-                double sdev = stats.getStdDev();
-                double skew = stats.getSkewness();
-                log.info("Computed statistics for {} genomes in input file {}. Mean = {} and stdev = {} with skew {}. Min/Max = {}/{}.", 
-                    genomeMap.size(), inputFileName, mean, sdev, skew, min, max);
-                // Put the statistics in the output report line.
+                // Now we need to create the representative subsets. This may require multiple passes if the number of closeness
+                // limits is larger than the thread max, which we use to avoid running out of memory. On the first pass, we will
+                // compute distribution statistics as well as the representative subsets.
+                FinderKmerStats stats = new FinderKmerStats();
+                // Start building the output report line.
                 StringBuilder reportLine = new StringBuilder(100);
-                reportLine.append(inputFileName).append('\t').append(genomeMap.size()).append('\t').append(min).append('\t')
-                        .append(mean).append('\t').append(max).append('\t').append(sdev).append('\t').append(skew);
+                reportLine.append(inputFileName).append('\t').append(genomeMap.size()).append('\t');
                 for (int groupIdx = 0; groupIdx < this.limits.length; groupIdx += this.maxThreads) {
                     int endIdx = Math.min(groupIdx + this.maxThreads, this.limits.length);
                     // Process the group of limits from groupIdx to endIdx - 1.
                     FinderKmerBatch[] repgenSetsGroup = FinderKmerBatch.createRepresentativeSubsets(genomeMap.keySet().stream(), this.p3, this.roleMap, 
-                            this.batchSize, Arrays.copyOfRange(this.limits, groupIdx, endIdx));
+                            this.batchSize, stats, Arrays.copyOfRange(this.limits, groupIdx, endIdx));
+                    if (stats != null) {
+                        // Here we generated statistics for the input genome distances. This only happens
+                        // for the first group of closeness limits. Get the min, max, mean, standard 
+                        // deviation, and skewness from the stats.                
+                        double min = stats.getMin();
+                        double max = stats.getMax();
+                        double mean = stats.getMean();
+                        double sdev = stats.getStdDev();
+                        double skew = stats.getSkewness();
+                        log.info("Computed statistics for {} genomes in input file {}. Mean = {} and stdev = {} with skew {}. Min/Max = {}/{}.", 
+                            genomeMap.size(), inputFileName, mean, sdev, skew, min, max);
+                        // Put the statistics in the output report line.
+                        reportLine.append(min).append('\t').append(mean).append('\t').append(max).append('\t').append(sdev).append('\t').append(skew);
+                        // Insure we don't compute stats on the next pass.
+                        stats = null;
+                    }
                     // Now we need to write each representative set to an output file and finish the report line for this input genome set.
                     for (int idx = 0; idx < repgenSetsGroup.length; idx++) {
                         double limit = this.limits[groupIdx + idx];

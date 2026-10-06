@@ -34,6 +34,7 @@ import org.theseed.basic.BaseProcessor;
  * fastaLen     compute the length of the sequences in a FASTA file
  * finderSamp   test finder-kmer representative sets
  * finderHist   create histogram bins from finder-kmer closeness values in one or more genome files
+ * finderForm   compute formula coefficients from the results of finderSamp
  *
  */
 public class App
@@ -69,6 +70,7 @@ public class App
  		 "combineJson", "combine multiple JSON files into a single file",
  		 "fastaLen", "compute the length of the sequences in a FASTA file",
  		 "finderSamp", "create a finder kmer testing file for a set of genomes",
+         "finderForm", "compute formula coefficients from the results of finderSamp"
     };
 
     public static void main( String[] args )
@@ -105,6 +107,7 @@ public class App
         case "fastaLen" -> processor = new FastaLenProcessor();
         case "finderSamp" -> processor = new FinderSampProcessor();
         case "finderHist" -> processor = new FinderHistProcessor();
+        case "finderForm" -> processor = new FinderFormProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
