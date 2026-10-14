@@ -19,11 +19,9 @@ import org.theseed.io.TabbedLineReader;
 import org.theseed.p3api.KeyBuffer;
 import org.theseed.p3api.P3CursorConnection;
 import org.theseed.proteins.RoleMap;
-import org.theseed.sequence.ProteinKmers;
 import org.theseed.sequence.seeds.FinderKmerBatch;
 import org.theseed.sequence.seeds.FinderKmerBatch.ProgressTracker;
 import org.theseed.sequence.seeds.FinderKmerStats;
-import org.theseed.sequence.seeds.FinderKmers;
 import org.theseed.utils.BasePipeProcessor;
 
 import com.github.cliftonlabs.json_simple.JsonObject;
@@ -51,6 +49,7 @@ import com.github.cliftonlabs.json_simple.JsonObject;
  * --roles  role definition file for the roles to use (default roles.for.finder in the current directory)
  * 
  * --fuzz   a distance from the computed closeness limit, relative to the standard deviation, for alternate limits to try (default is 0.3)
+ *          A fuzz factor of 0 means the fuzz factor will not be applied.
  */
 public class FinderRepsProcessor extends BasePipeProcessor {
 
@@ -139,16 +138,14 @@ public class FinderRepsProcessor extends BasePipeProcessor {
         if (this.targetSize <= 0)
             throw new ParseFailureException("Target size must be positive.");
         // Validate the fuzz factor.
-        if (this.fuzz <= 0.0)
-            throw new ParseFailureException("Fuzz factor must be positive.");
+        if (this.fuzz < 0.0)
+            throw new ParseFailureException("Fuzz factor cannot be negative.");
         // Load the role map from the specified file.
         if (! this.rolesFile.canRead())
             throw new ParseFailureException("Role definition file " + this.rolesFile + " is not found or unreadable.");
         log.info("Loading role map from {}.", this.rolesFile.getAbsolutePath());
         this.roleMap = RoleMap.load(this.rolesFile);
         log.info("Role map loaded with {} roles.", this.roleMap.size());
-        // Save the role IDs in a list to insure we always have the correct order when reading back the temporary file.
-        this.roleIds = new ArrayList<>(this.roleMap.keySet());
         // Connect to the database.
         this.p3 = new P3CursorConnection();
     }
@@ -167,6 +164,7 @@ public class FinderRepsProcessor extends BasePipeProcessor {
             if (iter.hasNext())
                 this.outputGenomes(writer, Collections.singleton(iter.next()));
         }
+        log.info("Fuzz factor is {}", this.fuzz);
         // For the first pass, we will loop through the genome IDs, building and processing
         // batches. Each batch will be used to update a statistics object for the closeness values
         // and create a repgen set for the sample closeness limit. The size of that repgen set
@@ -192,7 +190,7 @@ public class FinderRepsProcessor extends BasePipeProcessor {
                 // Put it into an array because of the way the processBatch method expects it.
                 FinderKmerBatch[] repgenArray = new FinderKmerBatch[] { repgen };
                 // Write the header for the temporary file.
-                tempWriter.println("genome_id\t" + StringUtils.join(this.roleIds, "\t"));
+                this.roleIds = FinderKmerBatch.createHeader(roleMap, tempWriter);
                 // We will loop through the genome IDs, filling the sample batch. Once its full,
                 // we generate the repgen set, update the statistics, and cache the proteins in
                 // the temporary file.
@@ -216,6 +214,7 @@ public class FinderRepsProcessor extends BasePipeProcessor {
             log.info("Estimated desired closeness: {}", desiredCloseness);
             // We are going to make three repgen sets with three closeness limits. First, we build the array of closeness limits.
             double fuzzValue = stats.getStdDev() * this.fuzz;
+            log.info("Fuzz value is {}", fuzzValue);
             double[] closenessLimits = this.computeClosenessLimits(desiredCloseness, fuzzValue);
             FinderKmerBatch[] repgenArray = this.buildRepgenArray(closenessLimits);
             // Reset the progress tracker for the second pass.
@@ -223,35 +222,16 @@ public class FinderRepsProcessor extends BasePipeProcessor {
             log.info("Computing repgen sets for the second pass.");
             // Prepare to read back the temporary file.
             try (TabbedLineReader tempReader = new TabbedLineReader(this.tempFileName)) {
+                this.roleIds = FinderKmerBatch.loadHeader(tempReader);
                 // This object will hold the current batch of genomes.
                 FinderKmerBatch batch = new FinderKmerBatch();
                 // Count the number of lines read.
                 int lineCount = 0;
-                for (var line : tempReader) {
-                    lineCount++;
-                    if (batch.size() >= SMALL_BATCH_SIZE) {
-                        batch.updateRepgens(repgenArray, closenessLimits, progress);
-                        batch.clear();
-                    }
-                    // Here we know there is room in the batch, so we add this genome.
-                    FinderKmers genome = new FinderKmers(line.get(0));
-                    // We need to add all the proteins.
-                    for (int i = 0; i < roleIds.size(); i++) {
-                        String fullProteinString = line.get(i + 1);
-                        if (! StringUtils.isBlank(fullProteinString)) {
-                            // Split the protein strings for this role. Most of the time, there is exactly one.
-                            String[] proteinStrings = StringUtils.split(line.get(i + 1), ',');
-                            String roleId = this.roleIds.get(i);
-                            for (String proteinString : proteinStrings)
-                                genome.addProteinSequence(roleId, proteinString);
-                        }
-                    }
-                    // Add the genome to the current batch.
-                    batch.addFinderKmers(genome);
-                }
-                // Process any remaining genomes in the batch.
-                if (batch.size() > 0) {
+                while (tempReader.hasNext()) {
+                    batch.load(roleIds, SMALL_BATCH_SIZE, tempReader);
+                    lineCount += batch.size();
                     batch.updateRepgens(repgenArray, closenessLimits, progress);
+                    batch.clear();
                 }
                 log.info("Completed second pass with {} lines processed.", lineCount);
             }
@@ -285,21 +265,7 @@ public class FinderRepsProcessor extends BasePipeProcessor {
         FinderKmerBatch kmerBatch = new FinderKmerBatch();
         kmerBatch.loadBatch(roleMap, p3, batch);
         // Write the cached proteins to the temporary file.
-        for (FinderKmers finderKmers : kmerBatch) {
-            // Write the genome ID and all its protein sequences to the temporary file.
-            String genomeId = finderKmers.getGenomeId();
-            tempWriter.print(genomeId);
-            for (String roleId : this.roleIds) {
-                ProteinKmers proteinKmers = finderKmers.getRoleKmers(roleId);
-                String fullProteinString;
-                if (proteinKmers == null)
-                    fullProteinString = "";
-                else
-                    fullProteinString = proteinKmers.getFullProteinString();
-                tempWriter.print("\t" + fullProteinString);
-            }
-            tempWriter.println();
-        }
+        kmerBatch.write(this.roleIds, tempWriter);
         // Merge the batch into the sample representative genome set.
         kmerBatch.updateRepgens(repgenSample, SAMPLE_LIMIT_ARRAY, progress);
     }
@@ -363,16 +329,19 @@ public class FinderRepsProcessor extends BasePipeProcessor {
     private double[] computeClosenessLimits(double desiredCloseness, double fuzzValue) {
         List<Double> limits = new ArrayList<>();
         double base = desiredCloseness;
-        double lower = base - fuzzValue;
-        double upper = base + fuzzValue;
-        if (lower >= 0.0) {
-            limits.add(lower);
-        }
         if (base >= 0.0 && base <= 1.0) {
             limits.add(base);
         }
-        if (upper <= 1.0) {
-            limits.add(upper);
+        // Insure the user has not turned off the fuzz factor.
+        if (fuzzValue > 0.0) {
+            double lower = base - fuzzValue;
+            double upper = base + fuzzValue;
+            if (lower >= 0.0) {
+                limits.add(lower);
+            }
+            if (upper <= 1.0) {
+                limits.add(upper);
+            }
         }
         log.info("Computed closeness limits: {}", StringUtils.join(limits, ", "));
         return limits.stream().mapToDouble(Double::doubleValue).toArray();

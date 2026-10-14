@@ -37,6 +37,7 @@ import org.theseed.basic.BaseProcessor;
  * finderForm   compute formula coefficients from the results of finderSamp
  * finderTable  create a table of finderSamp results
  * finderReps   generate a representative set for a group of genomes using finder-kmer technology
+ * finderMass   run mass tests for the finder representative genome generation
  *
  */
 public class App
@@ -74,7 +75,8 @@ public class App
  		 "finderSamp", "create a finder kmer testing file for a set of genomes",
          "finderForm", "compute formula coefficients from the results of finderSamp",
          "finderTable", "create a table of finderSamp results",
-         "finderReps", "generate a representative set for a group of genomes using finder-kmer technology"
+         "finderReps", "generate a representative set for a group of genomes using finder-kmer technology",
+         "finderMass", "run mass tests for the finder representative genome generation"
     };
 
     public static void main( String[] args )
@@ -114,6 +116,7 @@ public class App
         case "finderForm" -> processor = new FinderFormProcessor();
         case "finderTable" -> processor = new FinderTableProcessor();
         case "finderReps" -> processor = new FinderRepsProcessor();
+        case "finderMass" -> processor = new FinderMassTestProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
