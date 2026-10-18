@@ -14,7 +14,7 @@ import org.theseed.sequence.Sequence;
 import org.theseed.utils.BaseInputProcessor;
 
 /**
- * This command fixes missing genomes in the protein finder FASTA file for the key protein. The key protein should have
+ * This command finds missing genomes in the protein finder FASTA file for the key protein. The key protein should have
  * exactly one record for each good genome. If a good genome is missing, we list it for future fixing.
  * 
  * This is not a very smart program because it deals with a temporary emergency situation.
