@@ -20,14 +20,11 @@ import org.theseed.basic.BaseProcessor;
  * essential	determine which features in a list are essential
  * qualCheck	compute the mean quality of a Fastq directory sample group
  * fastaG		update a genome from a FASTA file
- * hammerFix	convert hammer strengths to neighborhood-based
  * hammerComp	compare hammer counts to distances
  * md5Check		check a genome dump directory for MD5s in a protein list
  * doneCheck	remove completed groups from a run list
  * findBig		find the largest file of each type in a directory of directories
- * findAmr		find high-quality genomes in BV-BRC with AMR data
  * mergeCol		merge a column from one tab-delimited file into a single-column file
- * virusFix		interrogate the BV-BRC database to find virus genomes identified by assembly accession
  * combineJson	combine multiple JSON files into a single file
  * coreReport   look at the results of the core genome match command and produce a report
  * funReport    look at the results of the functional role match command and produce a report
@@ -37,8 +34,8 @@ import org.theseed.basic.BaseProcessor;
  * finderForm   compute formula coefficients from the results of finderSamp
  * finderTable  create a table of finderSamp results
  * finderReps   generate a representative set for a group of genomes using finder-kmer technology
- * finderMass   run mass tests for the finder representative genome generation
- * finderFix    fix issues in the protein finder FASTA file for the key protein
+ * amrGenera    analyze AMR data at the genus level
+ * amrTests     generate genome groups for the AMR repgen test
  *
  */
 public class App
@@ -58,27 +55,22 @@ public class App
  		 "essential", "determine which features in a list are essential",
  		 "qualCheck", "compute the mean quality of a Fastq directory sample group",
  		 "fastaG", "update a genome from a FASTA file",
- 		 "hammerFix", "convert hammer strengths to neighborhood-based",
  		 "hammerComp", "compare hammer counts to distances",
  		 "md5Check", "check a genome dump directory for MD5s in a protein list",
  		 "doneCheck", "remove completed groups from a run list",
  		 "findBig", "find the largest file of each type in a directory of directories",
- 		 "findAmr", "find high-quality genomes in BV-BRC with AMR data",
  		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
- 		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
  		 "combineJson", "combine multiple JSON files into a single file",
  		 "coreReport", "look at the results of the core genome match command and produce a report",
  		 "funReport", "look at the results of the functional role match command and produce a report",
  		 "mergeCol", "merge a column from one tab-delimited file into a single-column file",
- 		 "virusFix", "interrogate the BV-BRC database to find virus genomes identified by assembly accession",
  		 "combineJson", "combine multiple JSON files into a single file",
  		 "fastaLen", "compute the length of the sequences in a FASTA file",
  		 "finderSamp", "create a finder kmer testing file for a set of genomes",
          "finderForm", "compute formula coefficients from the results of finderSamp",
          "finderTable", "create a table of finderSamp results",
-         "finderReps", "generate a representative set for a group of genomes using finder-kmer technology",
-         "finderMass", "run mass tests for the finder representative genome generation",
-         "finderFix", "fix issues in the protein finder FASTA file for the key protein"
+         "amrGenera", "analyze AMR data at the genus level",
+         "amrTests", "generate genome groups for the AMR repgen test",
     };
 
     public static void main( String[] args )
@@ -106,9 +98,8 @@ public class App
         case "md5Check" -> processor = new Md5CheckProcessor();
         case "doneCheck" -> processor = new DoneCheckProcessor();
         case "findBig" -> processor = new FindBigFileProcessor();
-        case "findAmr" -> processor = new FindAmrGenomeProcessor();
+        case "amrTests" -> processor = new AmrTestsProcessor();
         case "mergeCol" -> processor = new MergeColumnProcessor();
-        case "virusFix" -> processor = new VirusFixProcessor();
         case "combineJson" -> processor = new CombineJsonProcessor();
         case "coreReport" -> processor = new CoreReportProcessor();
         case "funReport" -> processor = new FunReportProcessor();
@@ -117,9 +108,7 @@ public class App
         case "finderHist" -> processor = new FinderHistProcessor();
         case "finderForm" -> processor = new FinderFormProcessor();
         case "finderTable" -> processor = new FinderTableProcessor();
-        case "finderReps" -> processor = new FinderRepsProcessor();
-        case "finderMass" -> processor = new FinderMassTestProcessor();
-        case "finderFix" -> processor = new FinderFixProcessor();
+        case "amrGenera" -> processor = new AmrGeneraProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
