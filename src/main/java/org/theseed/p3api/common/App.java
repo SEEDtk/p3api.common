@@ -36,6 +36,7 @@ import org.theseed.basic.BaseProcessor;
  * finderReps   generate a representative set for a group of genomes using finder-kmer technology
  * amrGenera    analyze AMR data at the genus level
  * amrTests     generate genome groups for the AMR repgen test
+ * randTests    generate random test groups for repgen tests
  *
  */
 public class App
@@ -71,6 +72,7 @@ public class App
          "finderTable", "create a table of finderSamp results",
          "amrGenera", "analyze AMR data at the genus level",
          "amrTests", "generate genome groups for the AMR repgen test",
+         "randTests", "generate random test groups for repgen tests",
     };
 
     public static void main( String[] args )
@@ -109,6 +111,7 @@ public class App
         case "finderForm" -> processor = new FinderFormProcessor();
         case "finderTable" -> processor = new FinderTableProcessor();
         case "amrGenera" -> processor = new AmrGeneraProcessor();
+        case "randTests" -> processor = new RandomTestProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
