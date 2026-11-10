@@ -37,6 +37,7 @@ import org.theseed.basic.BaseProcessor;
  * amrGenera    analyze AMR data at the genus level
  * amrTests     generate genome groups for the AMR repgen test
  * randTests    generate random test groups for repgen tests
+ * testClean    clean duplicates from AMR test files
  *
  */
 public class App
@@ -73,6 +74,7 @@ public class App
          "amrGenera", "analyze AMR data at the genus level",
          "amrTests", "generate genome groups for the AMR repgen test",
          "randTests", "generate random test groups for repgen tests",
+         "testClean", "clean duplicates from AMR test files"
     };
 
     public static void main( String[] args )
@@ -112,6 +114,7 @@ public class App
         case "finderTable" -> processor = new FinderTableProcessor();
         case "amrGenera" -> processor = new AmrGeneraProcessor();
         case "randTests" -> processor = new RandomTestProcessor();
+        case "testClean" -> processor = new TestCleanProcessor();
         case "-h", "--help" -> processor = null;
         default -> throw new RuntimeException("Invalid command " + command + ".");
         }
